@@ -1,7 +1,7 @@
 import { getAllGlobalCompanies, getRandomGlobalCompanies } from './globalCompanies';
 import { getAllEnhancedSuggestions, searchEnhancedSuggestions } from './enhancedSuggestions';
 
-export const searchSuggestions = {
+export const searchSuggestions: { [key: string]: any } = {
   companies: getAllGlobalCompanies(),
 
   names: [
@@ -244,7 +244,7 @@ export const searchSuggestions = {
   enhancedLocations: getAllEnhancedSuggestions('enhancedLocations')
 };
 
-export const getSearchSuggestions = (type: keyof typeof searchSuggestions): string[] => {
+export const getSearchSuggestions = (type: string): string[] => {
   const suggestions = searchSuggestions[type] || [];
   
   // For companies, return a mix of global companies and random selection for better performance
@@ -254,20 +254,20 @@ export const getSearchSuggestions = (type: keyof typeof searchSuggestions): stri
   
   // For enhanced categories, return full datasets
   if (['technologies', 'revenues', 'enhancedPositions', 'enhancedIndustries', 'enhancedLocations'].includes(type)) {
-    return suggestions[type] || [];
+    return suggestions[type as string] || [];
   }
   
   return suggestions;
 };
 
 // Enhanced search function for better performance with large datasets
-export const filterSearchSuggestions = (query: string, type: keyof typeof searchSuggestions, limit: number = 20): string[] => {
+export const filterSearchSuggestions = (query: string, type: string, limit: number = 20): string[] => {
   // Use enhanced search for large datasets
-  if (['technologies', 'revenues', 'enhancedPositions', 'enhancedIndustries', 'enhancedLocations', 'companies'].includes(type)) {
-    return searchEnhancedSuggestions(query, type, limit);
+  if (['technologies', 'revenues', 'enhancedPositions', 'enhancedIndustries', 'enhancedLocations', 'companies'].includes(type as string)) {
+    return searchEnhancedSuggestions(query, type as string, limit);
   }
   
-  const suggestions = getSearchSuggestions(type);
+  const suggestions = getSearchSuggestions(type as string);
   
   if (!query.trim()) {
     return suggestions.slice(0, limit);

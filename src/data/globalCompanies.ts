@@ -1,4 +1,4 @@
-export const globalCompanies = {
+export const globalCompanies: { [key: string]: string[] } = {
   // United States - Technology
   'United States': [
     'Microsoft', 'Apple', 'Google', 'Amazon', 'Meta', 'Tesla', 'Netflix', 'Salesforce',

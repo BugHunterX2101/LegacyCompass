@@ -6,8 +6,7 @@ import {
   EnvelopeIcon, 
   PhoneIcon,
   ChevronUpIcon,
-  ChevronDownIcon,
-  UserIcon
+  ChevronDownIcon
 } from '@heroicons/react/24/outline';
 
 interface LeadTableProps {

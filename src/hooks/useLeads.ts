@@ -1,167 +1,112 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { Lead } from '../types';
 
-// Sample lead data with real contact information
+// Sample lead data with correct Lead interface
 const sampleLeads: Lead[] = [
   {
     id: '1',
-    name: 'Satya Nadella',
+    companyName: 'Microsoft',
+    contactPerson: 'Satya Nadella',
     title: 'CEO',
-    company: 'Microsoft',
     email: 'satya.nadella@microsoft.com',
     phone: '+1-425-882-8080',
-    linkedinUrl: 'https://www.linkedin.com/in/satyanadella/',
-    companyWebsite: 'https://www.microsoft.com',
+    linkedinProfile: 'https://www.linkedin.com/in/satyanadella/',
+    website: 'https://www.microsoft.com',
     location: 'Redmond, WA',
     industry: 'Technology',
-    employeeCount: '220,000+',
-    revenue: '$200B+',
+    employeeCount: 220000,
+    revenue: 200000000000,
     score: 95,
-    status: 'hot',
-    lastContact: '2024-01-15',
+    status: 'qualified',
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-15'),
     notes: 'Interested in enterprise AI solutions',
     tags: ['Enterprise', 'AI', 'Cloud'],
-    source: 'LinkedIn'
+    source: 'LinkedIn',
   },
   {
     id: '2',
-    name: 'Sundar Pichai',
+    companyName: 'Google',
+    contactPerson: 'Sundar Pichai',
     title: 'CEO',
-    company: 'Google',
     email: 'sundar@google.com',
     phone: '+1-650-253-0000',
-    linkedinUrl: 'https://www.linkedin.com/in/sundarpichai/',
-    companyWebsite: 'https://www.google.com',
+    linkedinProfile: 'https://www.linkedin.com/in/sundarpichai/',
+    website: 'https://www.google.com',
     location: 'Mountain View, CA',
     industry: 'Technology',
-    employeeCount: '180,000+',
-    revenue: '$280B+',
+    employeeCount: 180000,
+    revenue: 280000000000,
     score: 92,
-    status: 'warm',
-    lastContact: '2024-01-10',
+    status: 'qualified',
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-10'),
     notes: 'Exploring cloud infrastructure partnerships',
     tags: ['Cloud', 'Search', 'AI'],
-    source: 'Apollo'
+    source: 'Apollo',
   },
   {
     id: '3',
-    name: 'Tim Cook',
+    companyName: 'Apple',
+    contactPerson: 'Tim Cook',
     title: 'CEO',
-    company: 'Apple',
     email: 'tcook@apple.com',
     phone: '+1-408-996-1010',
-    linkedinUrl: 'https://www.linkedin.com/in/tim-cook-0b5b3b/',
-    companyWebsite: 'https://www.apple.com',
+    linkedinProfile: 'https://www.linkedin.com/in/tim-cook-0b5b3b/',
+    website: 'https://www.apple.com',
     location: 'Cupertino, CA',
     industry: 'Technology',
-    employeeCount: '164,000+',
-    revenue: '$394B+',
+    employeeCount: 164000,
+    revenue: 394000000000,
     score: 88,
-    status: 'cold',
-    lastContact: '2024-01-05',
+    status: 'contacted',
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-05'),
     notes: 'Potential hardware integration opportunities',
     tags: ['Hardware', 'Consumer', 'Innovation'],
-    source: 'Website'
+    source: 'Website',
   },
   {
     id: '4',
-    name: 'Andy Jassy',
+    companyName: 'Amazon',
+    contactPerson: 'Andy Jassy',
     title: 'CEO',
-    company: 'Amazon',
     email: 'ajassy@amazon.com',
     phone: '+1-206-266-1000',
-    linkedinUrl: 'https://www.linkedin.com/in/andy-jassy-8b5b3b/',
-    companyWebsite: 'https://www.amazon.com',
+    linkedinProfile: 'https://www.linkedin.com/in/andy-jassy-8b5b3b/',
+    website: 'https://www.amazon.com',
     location: 'Seattle, WA',
     industry: 'E-commerce',
-    employeeCount: '1,500,000+',
-    revenue: '$514B+',
+    employeeCount: 1500000,
+    revenue: 514000000000,
     score: 90,
-    status: 'hot',
-    lastContact: '2024-01-12',
+    status: 'qualified',
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-12'),
     notes: 'AWS partnership discussions ongoing',
     tags: ['Cloud', 'E-commerce', 'Logistics'],
-    source: 'LinkedIn'
+    source: 'LinkedIn',
   },
   {
     id: '5',
-    name: 'Jensen Huang',
+    companyName: 'NVIDIA',
+    contactPerson: 'Jensen Huang',
     title: 'CEO',
-    company: 'NVIDIA',
     email: 'jhuang@nvidia.com',
     phone: '+1-408-486-2000',
-    linkedinUrl: 'https://www.linkedin.com/in/jenhsunhuang/',
-    companyWebsite: 'https://www.nvidia.com',
+    linkedinProfile: 'https://www.linkedin.com/in/jenhsunhuang/',
+    website: 'https://www.nvidia.com',
     location: 'Santa Clara, CA',
     industry: 'Technology',
-    employeeCount: '29,600+',
-    revenue: '$60B+',
+    employeeCount: 29600,
+    revenue: 60000000000,
     score: 94,
-    status: 'warm',
-    lastContact: '2024-01-08',
+    status: 'qualified',
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-08'),
     notes: 'AI chip requirements for data centers',
     tags: ['AI', 'Hardware', 'Gaming'],
-    source: 'Apollo'
-  },
-  {
-    id: '6',
-    name: 'Marc Benioff',
-    title: 'CEO',
-    company: 'Salesforce',
-    email: 'mbenioff@salesforce.com',
-    phone: '+1-415-901-7000',
-    linkedinUrl: 'https://www.linkedin.com/in/marcbenioff/',
-    companyWebsite: 'https://www.salesforce.com',
-    location: 'San Francisco, CA',
-    industry: 'Software',
-    employeeCount: '73,000+',
-    revenue: '$31B+',
-    score: 87,
-    status: 'warm',
-    lastContact: '2024-01-06',
-    notes: 'CRM integration possibilities',
-    tags: ['CRM', 'Cloud', 'Enterprise'],
-    source: 'Website'
-  },
-  {
-    id: '7',
-    name: 'Elon Musk',
-    title: 'CEO',
-    company: 'Tesla',
-    email: 'elon@tesla.com',
-    phone: '+1-512-516-8177',
-    linkedinUrl: 'https://www.linkedin.com/in/elonmusk/',
-    companyWebsite: 'https://www.tesla.com',
-    location: 'Austin, TX',
-    industry: 'Automotive',
-    employeeCount: '140,000+',
-    revenue: '$96B+',
-    score: 85,
-    status: 'cold',
-    lastContact: '2024-01-03',
-    notes: 'Autonomous vehicle technology discussions',
-    tags: ['Automotive', 'AI', 'Energy'],
-    source: 'LinkedIn'
-  },
-  {
-    id: '8',
-    name: 'Susan Wojcicki',
-    title: 'Former CEO',
-    company: 'YouTube',
-    email: 'susan@youtube.com',
-    phone: '+1-650-253-0000',
-    linkedinUrl: 'https://www.linkedin.com/in/susanwojcicki/',
-    companyWebsite: 'https://www.youtube.com',
-    location: 'San Bruno, CA',
-    industry: 'Media',
-    employeeCount: '2,000+',
-    revenue: '$29B+',
-    score: 82,
-    status: 'warm',
-    lastContact: '2024-01-04',
-    notes: 'Content platform partnerships',
-    tags: ['Media', 'Content', 'Advertising'],
-    source: 'Apollo'
+    source: 'Apollo',
   }
 ];
 
@@ -180,9 +125,9 @@ export const useLeads = () => {
   const filteredLeads = useMemo(() => {
     return leads.filter(lead => {
       const matchesSearch = !searchQuery || 
-        lead.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.company.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        lead.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        lead.companyName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (lead.contactPerson && lead.contactPerson.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (lead.title && lead.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
         lead.industry.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesStatus = !filters.status || lead.status === filters.status;
@@ -232,20 +177,20 @@ export const useLeads = () => {
   // Export leads to CSV
   const exportLeads = () => {
     const headers = [
-      'Name', 'Title', 'Company', 'Email', 'Phone', 'LinkedIn', 'Website',
+      'Company Name', 'Contact Person', 'Title', 'Email', 'Phone', 'LinkedIn Profile', 'Website',
       'Location', 'Industry', 'Employee Count', 'Revenue', 'Score', 'Status'
     ];
     
     const csvContent = [
       headers.join(','),
       ...filteredLeads.map(lead => [
-        lead.name,
-        lead.title,
-        lead.company,
-        lead.email,
-        lead.phone,
-        lead.linkedinUrl,
-        lead.companyWebsite,
+        lead.companyName,
+        lead.contactPerson || '',
+        lead.title || '',
+        lead.email || '',
+        lead.phone || '',
+        lead.linkedinProfile || '',
+        lead.website || '',
         lead.location,
         lead.industry,
         lead.employeeCount,
@@ -267,16 +212,18 @@ export const useLeads = () => {
   // Get lead statistics
   const getStats = () => {
     const total = leads.length;
-    const hot = leads.filter(lead => lead.status === 'hot').length;
-    const warm = leads.filter(lead => lead.status === 'warm').length;
-    const cold = leads.filter(lead => lead.status === 'cold').length;
+    const qualified = leads.filter(lead => lead.status === 'qualified').length;
+    const contacted = leads.filter(lead => lead.status === 'contacted').length;
+    const converted = leads.filter(lead => lead.status === 'converted').length;
+    const rejected = leads.filter(lead => lead.status === 'rejected').length;
     const avgScore = leads.reduce((sum, lead) => sum + lead.score, 0) / total || 0;
 
     return {
       total,
-      hot,
-      warm,
-      cold,
+      qualified,
+      contacted,
+      converted,
+      rejected,
       avgScore: Math.round(avgScore)
     };
   };

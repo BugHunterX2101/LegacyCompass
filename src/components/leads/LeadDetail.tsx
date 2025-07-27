@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Lead } from '../../types';
 import { ScoreCircle } from '../common/ScoreCircle';
-import { StatusBadge } from '../common/StatusBadge';
 import { Building, MapPin, Calendar, Mail, Phone, Linkedin, Target, TrendingUp, Edit3, Save, X, ExternalLink, Copy, CheckCircle } from 'lucide-react';
 
 interface LeadDetailProps {
