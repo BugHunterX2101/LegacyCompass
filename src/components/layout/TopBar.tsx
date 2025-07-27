@@ -21,11 +21,11 @@ export const TopBar: React.FC<TopBarProps> = ({ onImport, onScrape, onExport }) 
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">LA</span>
+                <span className="text-white font-bold text-sm">LC</span>
               </div>
               <div>
-                <h1 className="text-xl font-bold text-white">Legacy Alignment</h1>
-                <p className="text-xs text-gray-400">Scorecard Tool</p>
+                <h1 className="text-xl font-bold text-white">LegacyCompass</h1>
+                <p className="text-xs text-gray-400">Lead Intelligence Platform</p>
               </div>
             </div>
           </div>

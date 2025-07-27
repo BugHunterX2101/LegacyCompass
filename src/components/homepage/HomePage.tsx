@@ -53,13 +53,13 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onStartScrape })
           <div className="text-center">
             <div className="flex justify-center mb-8">
               <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center shadow-2xl">
-                <span className="text-white font-bold text-2xl">LA</span>
+                <span className="text-white font-bold text-2xl">LC</span>
               </div>
             </div>
             <h1 className="text-5xl md:text-6xl font-bold text-white mb-6">
-              Legacy Alignment
+              LegacyCompass
               <span className="block text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                Scorecard Tool
+                Lead Intelligence Platform
               </span>
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-3xl mx-auto">

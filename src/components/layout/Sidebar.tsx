@@ -27,7 +27,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
           </div>
           <div>
             <h1 className="text-lg font-bold text-white">
-              SaasquatchLeads
+              LegacyCompass
             </h1>
             <p className="text-xs text-gray-400">Lead Intelligence</p>
           </div>
