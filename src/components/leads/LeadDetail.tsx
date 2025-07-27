@@ -15,14 +15,14 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
   const [editedLead, setEditedLead] = useState(lead);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
-  const alignmentFactors = [
+  const alignmentFactors = lead.alignment ? [
     { key: 'industry', label: 'Industry Fit', value: lead.alignment.industry, weight: '25%' },
     { key: 'companySize', label: 'Company Size', value: lead.alignment.companySize, weight: '20%' },
     { key: 'revenue', label: 'Revenue Range', value: lead.alignment.revenue, weight: '20%' },
     { key: 'position', label: 'Position Level', value: lead.alignment.position, weight: '15%' },
     { key: 'geography', label: 'Geography', value: lead.alignment.geography, weight: '10%' },
     { key: 'engagement', label: 'Engagement', value: lead.alignment.engagement, weight: '10%' }
-  ];
+  ] : [];
 
   const getRecommendations = (score: number) => {
     if (score >= 90) {
@@ -107,6 +107,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
     const body = encodeURIComponent(`Hi ${name.split(' ')[0]},\n\nI hope this email finds you well. I came across your profile and was impressed by your work at ${company}.\n\nI'd love to discuss a potential partnership opportunity that could benefit ${company}.\n\nWould you be available for a brief call this week?\n\nBest regards,\n[Your Name]`);
     window.open(`mailto:${email}?subject=${subject}&body=${body}`);
   };
+
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-lg max-w-5xl w-full max-h-[90vh] overflow-y-auto m-4">
@@ -117,21 +118,25 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
                 <div className="space-y-2">
                   <input
                     type="text"
-                    value={editedLead.name}
-                    onChange={(e) => setEditedLead({ ...editedLead, name: e.target.value })}
+                    value={editedLead.companyName}
+                    onChange={(e) => setEditedLead({ ...editedLead, companyName: e.target.value })}
                     className="text-2xl font-bold text-gray-900 border-b border-gray-300 focus:border-blue-500 outline-none"
+                    placeholder="Company name"
+                    title="Edit company name"
                   />
                   <input
                     type="text"
-                    value={editedLead.position}
-                    onChange={(e) => setEditedLead({ ...editedLead, position: e.target.value })}
+                    value={editedLead.contactPerson || ''}
+                    onChange={(e) => setEditedLead({ ...editedLead, contactPerson: e.target.value })}
                     className="text-lg text-gray-600 border-b border-gray-300 focus:border-blue-500 outline-none"
+                    placeholder="Contact person name"
+                    title="Edit contact person name"
                   />
                 </div>
               ) : (
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-900">{lead.name}</h2>
-                  <p className="text-lg text-gray-600">{lead.position} at {lead.company}</p>
+                  <h2 className="text-2xl font-bold text-gray-900">{lead.companyName}</h2>
+                  <p className="text-lg text-gray-600">{lead.contactPerson} {lead.title && `• ${lead.title}`}</p>
                 </div>
               )}
             </div>
@@ -145,12 +150,16 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
                     <button
                       onClick={handleSave}
                       className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                      title="Save changes"
+                      aria-label="Save changes"
                     >
                       <Save className="w-5 h-5" />
                     </button>
                     <button
                       onClick={() => setEditing(false)}
                       className="p-2 text-gray-400 hover:bg-gray-50 rounded-lg transition-colors"
+                      title="Cancel editing"
+                      aria-label="Cancel editing"
                     >
                       <X className="w-5 h-5" />
                     </button>
@@ -159,6 +168,8 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
                   <button
                     onClick={() => setEditing(true)}
                     className="p-2 text-gray-400 hover:bg-gray-50 rounded-lg transition-colors"
+                    title="Edit lead"
+                    aria-label="Edit lead"
                   >
                     <Edit3 className="w-5 h-5" />
                   </button>
@@ -167,6 +178,8 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
                 <button
                   onClick={onClose}
                   className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                  title="Close lead detail"
+                  aria-label="Close lead detail"
                 >
                   <X className="w-6 h-6" />
                 </button>
@@ -201,24 +214,48 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Contact Information</h3>
               <div className="space-y-3">
-                <div className="flex items-center text-sm">
-                  <Mail className="w-4 h-4 mr-3 text-gray-400" />
-                  <div className="flex items-center flex-1">
-                    <button
-                      onClick={() => openEmailClient(lead.email, lead.name, lead.company)}
-                      className="text-blue-600 hover:text-blue-700 mr-2"
-                    >
-                      {lead.email}
-                    </button>
-                    <button
-                      onClick={() => copyToClipboard(lead.email, 'email')}
-                      className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                      title="Copy email"
-                    >
-                      {copiedField === 'email' ? <CheckCircle className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
-                    </button>
+                {lead.email && (
+                  <div className="flex items-center text-sm">
+                    <Mail className="w-4 h-4 mr-3 text-gray-400" />
+                    <div className="flex items-center flex-1">
+                      <button
+                        onClick={() => openEmailClient(lead.email!, lead.contactPerson || 'there', lead.companyName)}
+                        className="text-blue-600 hover:text-blue-700 mr-2"
+                      >
+                        {lead.email}
+                      </button>
+                      <button
+                        onClick={() => copyToClipboard(lead.email!, 'email')}
+                        className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                        title="Copy email address"
+                        aria-label="Copy email address"
+                      >
+                        {copiedField === 'email' ? <CheckCircle className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
+                {lead.gmail && (
+                  <div className="flex items-center text-sm">
+                    <Mail className="w-4 h-4 mr-3 text-red-400" />
+                    <div className="flex items-center flex-1">
+                      <button
+                        onClick={() => openEmailClient(lead.gmail!, lead.contactPerson || 'there', lead.companyName)}
+                        className="text-red-600 hover:text-red-700 mr-2"
+                      >
+                        {lead.gmail}
+                      </button>
+                      <button
+                        onClick={() => copyToClipboard(lead.gmail!, 'gmail')}
+                        className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
+                        title="Copy Gmail address"
+                        aria-label="Copy Gmail address"
+                      >
+                        {copiedField === 'gmail' ? <CheckCircle className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
+                      </button>
+                    </div>
+                  </div>
+                )}
                 {lead.phone && (
                   <div className="flex items-center text-sm">
                     <Phone className="w-4 h-4 mr-3 text-gray-400" />
@@ -227,19 +264,20 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
                         {lead.phone}
                       </a>
                       <button
-                        onClick={() => copyToClipboard(lead.phone, 'phone')}
+                        onClick={() => copyToClipboard(lead.phone!, 'phone')}
                         className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-                        title="Copy phone"
+                        title="Copy phone number"
+                        aria-label="Copy phone number"
                       >
                         {copiedField === 'phone' ? <CheckCircle className="w-3 h-3 text-green-500" /> : <Copy className="w-3 h-3" />}
                       </button>
                     </div>
                   </div>
                 )}
-                {lead.linkedin && (
+                {lead.linkedinProfile && (
                   <div className="flex items-center text-sm">
-                    <Linkedin className="w-4 h-4 mr-3 text-gray-400" />
-                    <a href={lead.linkedin} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 flex items-center">
+                    <Linkedin className="w-4 h-4 mr-3 text-blue-600" />
+                    <a href={lead.linkedinProfile} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 flex items-center">
                       LinkedIn Profile
                       <ExternalLink className="w-3 h-3 ml-1" />
                     </a>
@@ -260,13 +298,24 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
             <div>
               <h3 className="text-lg font-semibold text-gray-900 mb-3">Quick Actions</h3>
               <div className="space-y-2">
-                <button
-                  onClick={() => openEmailClient(lead.email, lead.name, lead.company)}
-                  className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Mail className="w-4 h-4 mr-2" />
-                  Send Email
-                </button>
+                {lead.email && (
+                  <button
+                    onClick={() => openEmailClient(lead.email!, lead.contactPerson || 'there', lead.companyName)}
+                    className="w-full flex items-center justify-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Send Email
+                  </button>
+                )}
+                {lead.gmail && (
+                  <button
+                    onClick={() => openEmailClient(lead.gmail!, lead.contactPerson || 'there', lead.companyName)}
+                    className="w-full flex items-center justify-center px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    <Mail className="w-4 h-4 mr-2" />
+                    Send Gmail
+                  </button>
+                )}
                 {lead.phone && (
                   <a
                     href={`tel:${lead.phone}`}
@@ -276,9 +325,9 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
                     Call Now
                   </a>
                 )}
-                {lead.linkedin && (
+                {lead.linkedinProfile && (
                   <a
-                    href={lead.linkedin}
+                    href={lead.linkedinProfile}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="w-full flex items-center justify-center px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors"
@@ -299,7 +348,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
                 <div className="flex items-center text-sm text-gray-600">
                   <Building className="w-4 h-4 mr-3 text-gray-400" />
                   <div className="flex items-center">
-                    {lead.email}
+                    {lead.companyName}
                     {lead.website && (
                       <a
                         href={lead.website}
@@ -314,20 +363,24 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
                   </div>
                 </div>
                 <div className="flex items-center text-sm text-gray-600">
-                  {lead.industry} • {lead.companySize} employees
+                  {lead.industry} • {lead.employeeCount.toLocaleString()} employees
                 </div>
                 <div className="flex items-center text-sm text-gray-600">
                   <MapPin className="w-4 h-4 mr-3 text-gray-400" />
                   {lead.location}
                 </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <TrendingUp className="w-4 h-4 mr-3 text-gray-400" />
-                  {lead.revenue} revenue
-                </div>
-                <div className="flex items-center text-sm text-gray-600">
-                  <Calendar className="w-4 h-4 mr-3 text-gray-400" />
-                  Source: {lead.source}
-                </div>
+                {lead.revenue && (
+                  <div className="flex items-center text-sm text-gray-600">
+                    <TrendingUp className="w-4 h-4 mr-3 text-gray-400" />
+                    ${lead.revenue.toLocaleString()} revenue
+                  </div>
+                )}
+                {lead.source && (
+                  <div className="flex items-center text-sm text-gray-600">
+                    <Calendar className="w-4 h-4 mr-3 text-gray-400" />
+                    Source: {lead.source}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -353,36 +406,38 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
           </div>
 
           {/* AI Alignment Scorecard */}
-          <div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Alignment Scorecard</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {alignmentFactors.map((factor) => (
-                <div key={factor.key} className="p-4 bg-gray-50 rounded-lg">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">{factor.label}</span>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-xs text-gray-500">{factor.weight}</span>
-                      <span className={`text-sm font-bold ${
-                        factor.value >= 80 ? 'text-green-600' : 
-                        factor.value >= 60 ? 'text-yellow-600' : 'text-red-600'
-                      }`}>
-                        {factor.value}%
-                      </span>
+          {lead.alignment && (
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">AI Alignment Scorecard</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {alignmentFactors.map((factor) => (
+                  <div key={factor.key} className="p-4 bg-gray-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium text-gray-700">{factor.label}</span>
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs text-gray-500">{factor.weight}</span>
+                        <span className={`text-sm font-bold ${
+                          factor.value >= 80 ? 'text-green-600' : 
+                          factor.value >= 60 ? 'text-yellow-600' : 'text-red-600'
+                        }`}>
+                          {factor.value}%
+                        </span>
+                      </div>
+                    </div>
+                    <div className="bg-gray-200 rounded-full h-2">
+                      <div 
+                        className={`h-2 rounded-full transition-all duration-300 ${
+                          factor.value >= 80 ? 'bg-green-500' : 
+                          factor.value >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                        }`}
+                        style={{ width: `${factor.value}%` }}
+                      />
                     </div>
                   </div>
-                  <div className="bg-gray-200 rounded-full h-2">
-                    <div 
-                      className={`h-2 rounded-full transition-all duration-300 ${
-                        factor.value >= 80 ? 'bg-green-500' : 
-                        factor.value >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${factor.value}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* AI Recommendations */}
           <div>

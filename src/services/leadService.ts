@@ -39,6 +39,19 @@ const generateEmail = (companyName: string, contactName?: string): string => {
   return `${randomEmail}@${domain}.com`;
 };
 
+const generateGmail = (contactName?: string): string => {
+  if (!contactName) {
+    const names = ['john.doe', 'jane.smith', 'mike.wilson', 'sarah.jones', 'david.brown'];
+    return `${names[Math.floor(Math.random() * names.length)]}@gmail.com`;
+  }
+  
+  const name = contactName.toLowerCase()
+    .replace(/\s+/g, '.')
+    .replace(/[^a-z.]/g, '');
+  const numbers = Math.floor(Math.random() * 999);
+  return `${name}${numbers}@gmail.com`;
+};
+
 const generatePhone = (): string => {
   const areaCode = Math.floor(Math.random() * 900) + 100;
   const exchange = Math.floor(Math.random() * 900) + 100;
@@ -61,6 +74,17 @@ const generateContactName = (): string => {
   return `${firstName} ${lastName}`;
 };
 
+const generateLinkedInProfile = (contactName?: string, companyName?: string): string => {
+  if (!contactName) {
+    return `https://linkedin.com/in/professional-${Math.floor(Math.random() * 9999)}`;
+  }
+  
+  const name = contactName.toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z-]/g, '');
+  return `https://linkedin.com/in/${name}-${Math.floor(Math.random() * 999)}`;
+};
+
 const generateSocialMedia = (companyName: string) => {
   const cleanName = companyName.toLowerCase()
     .replace(/[^a-z0-9\s]/g, '')
@@ -74,11 +98,24 @@ const generateSocialMedia = (companyName: string) => {
   };
 };
 
+const generateAlignmentScores = () => {
+  return {
+    industry: Math.floor(Math.random() * 40) + 60, // 60-100
+    companySize: Math.floor(Math.random() * 40) + 60,
+    revenue: Math.floor(Math.random() * 40) + 60,
+    position: Math.floor(Math.random() * 40) + 60,
+    geography: Math.floor(Math.random() * 40) + 60,
+    engagement: Math.floor(Math.random() * 40) + 60
+  };
+};
+
 export const generateMockLead = (companyName?: string): Lead => {
   const company = companyName || getRandomGlobalCompanies(1)[0];
   const contactName = Math.random() > 0.3 ? generateContactName() : undefined;
   const hasEmail = Math.random() > 0.2;
   const hasPhone = Math.random() > 0.4;
+  const hasGmail = Math.random() > 0.5;
+  const hasLinkedInProfile = Math.random() > 0.4;
   
   return {
     id: Math.random().toString(36).substr(2, 9),
@@ -86,6 +123,7 @@ export const generateMockLead = (companyName?: string): Lead => {
     industry: industries[Math.floor(Math.random() * industries.length)],
     website: generateWebsiteUrl(company),
     email: hasEmail ? generateEmail(company, contactName) : undefined,
+    gmail: hasGmail ? generateGmail(contactName) : undefined,
     phone: hasPhone ? generatePhone() : undefined,
     contactPerson: contactName,
     title: contactName ? ['CEO', 'CTO', 'VP Sales', 'Marketing Director', 'Operations Manager'][Math.floor(Math.random() * 5)] : undefined,
@@ -97,8 +135,12 @@ export const generateMockLead = (companyName?: string): Lead => {
     createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000),
     updatedAt: new Date(),
     socialMedia: Math.random() > 0.3 ? generateSocialMedia(company) : undefined,
+    linkedinProfile: hasLinkedInProfile ? generateLinkedInProfile(contactName, company) : undefined,
     description: `${company} is a leading company in the ${industries[Math.floor(Math.random() * industries.length)].toLowerCase()} industry.`,
-    tags: Math.random() > 0.5 ? ['high-priority', 'enterprise', 'warm-lead'].slice(0, Math.floor(Math.random() * 3) + 1) : []
+    tags: Math.random() > 0.5 ? ['high-priority', 'enterprise', 'warm-lead'].slice(0, Math.floor(Math.random() * 3) + 1) : [],
+    source: ['LinkedIn', 'Crunchbase', 'Yellow Pages', 'Website', 'Referral'][Math.floor(Math.random() * 5)],
+    alignment: generateAlignmentScores(),
+    notes: Math.random() > 0.7 ? 'Potential high-value lead based on recent company growth and industry alignment.' : undefined
   };
 };
 
@@ -146,13 +188,16 @@ export const enrichLead = async (lead: Lead): Promise<Lead> => {
   const enrichedLead: Lead = {
     ...lead,
     email: lead.email || generateEmail(lead.companyName, lead.contactPerson),
+    gmail: lead.gmail || (Math.random() > 0.3 ? generateGmail(lead.contactPerson) : undefined),
     phone: lead.phone || generatePhone(),
     contactPerson: lead.contactPerson || generateContactName(),
+    linkedinProfile: lead.linkedinProfile || (Math.random() > 0.4 ? generateLinkedInProfile(lead.contactPerson, lead.companyName) : undefined),
     socialMedia: {
       ...lead.socialMedia,
       ...generateSocialMedia(lead.companyName)
     },
     score: Math.min(lead.score + Math.floor(Math.random() * 20), 100),
+    alignment: lead.alignment || generateAlignmentScores(),
     updatedAt: new Date()
   };
   
@@ -161,9 +206,9 @@ export const enrichLead = async (lead: Lead): Promise<Lead> => {
 
 export const exportLeadsToCSV = (leads: Lead[]): string => {
   const headers = [
-    'Company Name', 'Industry', 'Location', 'Website', 'Email', 'Phone',
+    'Company Name', 'Industry', 'Location', 'Website', 'Email', 'Gmail', 'Phone',
     'Contact Person', 'Title', 'Employee Count', 'Revenue', 'Score', 'Status',
-    'LinkedIn', 'Twitter', 'Facebook', 'Created At', 'Updated At'
+    'LinkedIn Profile', 'Company LinkedIn', 'Twitter', 'Facebook', 'Source', 'Created At', 'Updated At'
   ];
   
   const csvContent = [
@@ -174,6 +219,7 @@ export const exportLeadsToCSV = (leads: Lead[]): string => {
       `"${lead.location}"`,
       `"${lead.website}"`,
       `"${lead.email || ''}"`,
+      `"${lead.gmail || ''}"`,
       `"${lead.phone || ''}"`,
       `"${lead.contactPerson || ''}"`,
       `"${lead.title || ''}"`,
@@ -181,9 +227,11 @@ export const exportLeadsToCSV = (leads: Lead[]): string => {
       lead.revenue,
       lead.score,
       `"${lead.status}"`,
+      `"${lead.linkedinProfile || ''}"`,
       `"${lead.socialMedia?.linkedin || ''}"`,
       `"${lead.socialMedia?.twitter || ''}"`,
       `"${lead.socialMedia?.facebook || ''}"`,
+      `"${lead.source || ''}"`,
       `"${lead.createdAt.toISOString()}"`,
       `"${lead.updatedAt.toISOString()}"`
     ].join(','))

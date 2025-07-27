@@ -31,8 +31,8 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onSelect, onEnrich, is
       <div className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-white">{lead.name}</h3>
-            <p className="text-sm text-gray-400">{lead.position}</p>
+            <h3 className="text-lg font-semibold text-white">{lead.companyName}</h3>
+            <p className="text-sm text-gray-400">{lead.contactPerson} {lead.title && `• ${lead.title}`}</p>
             <div className="flex items-center mt-1">
               <span className={`text-xs font-medium ${scoreLabel.color}`}>
                 {scoreLabel.label}
@@ -50,7 +50,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onSelect, onEnrich, is
         <div className="space-y-2 mb-4">
           <div className="flex items-center text-sm text-gray-300">
             <Building className="w-4 h-4 mr-2 text-gray-400" />
-            {lead.company} • {lead.companySize}
+            {lead.industry} • {lead.employeeCount.toLocaleString()} employees
           </div>
           <div className="flex items-center text-sm text-gray-300">
             <MapPin className="w-4 h-4 mr-2 text-gray-400" />
@@ -58,7 +58,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onSelect, onEnrich, is
           </div>
           <div className="flex items-center text-sm text-gray-300">
             <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-            Added {new Date(lead.dateAdded).toLocaleDateString()}
+            Added {lead.createdAt.toLocaleDateString()}
           </div>
         </div>
 
@@ -70,7 +70,21 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onSelect, onEnrich, is
                 href={`mailto:${lead.email}`}
                 className="text-gray-500 hover:text-[#2563EB] transition-colors"
                 onClick={(e) => e.stopPropagation()}
-                title={`Email ${lead.name}`}
+                title={`Email ${lead.contactPerson || lead.companyName}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Mail className="w-4 h-4" />
+              </a>
+            )}
+            {lead.gmail && (
+              <a 
+                href={`mailto:${lead.gmail}`}
+                className="text-gray-500 hover:text-red-500 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+                title={`Gmail ${lead.contactPerson || lead.companyName}`}
+                target="_blank"
+                rel="noopener noreferrer"
               >
                 <Mail className="w-4 h-4" />
               </a>
@@ -80,19 +94,19 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onSelect, onEnrich, is
                 href={`tel:${lead.phone}`}
                 className="text-gray-500 hover:text-[#2563EB] transition-colors"
                 onClick={(e) => e.stopPropagation()}
-                title={`Call ${lead.name}`}
+                title={`Call ${lead.contactPerson || lead.companyName}`}
               >
                 <Phone className="w-4 h-4" />
               </a>
             )}
-            {lead.linkedin && (
+            {lead.linkedinProfile && (
               <a 
-                href={lead.linkedin}
+                href={lead.linkedinProfile}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-500 hover:text-[#2563EB] transition-colors"
                 onClick={(e) => e.stopPropagation()}
-                title={`View ${lead.name}'s LinkedIn`}
+                title={`View ${lead.contactPerson || lead.companyName}'s LinkedIn`}
               >
                 <Linkedin className="w-4 h-4" />
               </a>
@@ -104,7 +118,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onSelect, onEnrich, is
                 rel="noopener noreferrer"
                 className="text-gray-500 hover:text-[#2563EB] transition-colors"
                 onClick={(e) => e.stopPropagation()}
-                title={`Visit ${lead.company} website`}
+                title={`Visit ${lead.companyName} website`}
               >
                 <ExternalLink className="w-4 h-4" />
               </a>
@@ -146,6 +160,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onSelect, onEnrich, is
               onEnrich(lead.id);
             }}
             className="flex items-center px-2 py-1 text-xs bg-purple-500/20 text-purple-400 rounded-lg hover:bg-purple-500/30 transition-colors"
+            title="Enrich lead data"
           >
             <Zap className="w-3 h-3 mr-1" />
             Enrich

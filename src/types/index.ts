@@ -21,6 +21,20 @@ export interface Lead {
   };
   description?: string;
   tags: string[];
+  // Additional contact properties
+  gmail?: string;
+  linkedinProfile?: string;
+  notes?: string;
+  source?: string;
+  // Alignment scoring properties
+  alignment?: {
+    industry: number;
+    companySize: number;
+    revenue: number;
+    position: number;
+    geography: number;
+    engagement: number;
+  };
 }
 
 export interface SearchFilter {
