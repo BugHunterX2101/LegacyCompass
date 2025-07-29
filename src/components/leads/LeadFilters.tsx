@@ -1,11 +1,20 @@
 import React from 'react';
-// import { FilterOptions } from '../../types'; // Not used, remove to fix TS2305
 import { Filter, X } from 'lucide-react';
 import { getSearchSuggestions } from '../../data/searchSuggestions';
 
+// Define a type for filters
+interface LeadFiltersType {
+  scoreRange: [number, number];
+  industries: string[];
+  companySizes: string[];
+  statuses: string[];
+  sources: string[];
+  dateRange: [string, string];
+}
+
 interface LeadFiltersProps {
-  filters: any; // Assuming FilterOptions is replaced by 'any' or a new type
-  onFiltersChange: (filters: any) => void; // Assuming FilterOptions is replaced by 'any' or a new type
+  filters: LeadFiltersType;
+  onFiltersChange: (filters: LeadFiltersType) => void;
   isOpen: boolean;
   onToggle: () => void;
 }
@@ -16,15 +25,16 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
   isOpen, 
   onToggle 
 }) => {
-  const industries = getSearchSuggestions('industries');
-  const companySizes = getSearchSuggestions('companySizes');
-  const sources = getSearchSuggestions('sources');
+  const industries = getSearchSuggestions('industries') || [];
+  const companySizes = getSearchSuggestions('companySizes') || [];
+  const sources = getSearchSuggestions('sources') || [];
 
+  // Only use statuses supported by Lead type
   const statuses = [
-    'new', 'qualified', 'unqualified', 'contacted', 'converted'
+    'new', 'qualified', 'contacted', 'converted', 'rejected'
   ];
 
-  const handleFilterChange = (key: string, value: any) => {
+  const handleFilterChange = (key: keyof LeadFiltersType, value: any) => {
     onFiltersChange({ ...filters, [key]: value });
   };
 
@@ -33,6 +43,8 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
       <button
         onClick={onToggle}
         className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+        title="Open filters"
+        aria-label="Open filters"
       >
         <Filter className="w-4 h-4 mr-2" />
         Filters
@@ -43,10 +55,12 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+        <h3 className="text-lg font-semibold text-gray-900" id="filters-title">Filters</h3>
         <button
           onClick={onToggle}
           className="text-gray-400 hover:text-gray-600 transition-colors"
+          title="Close filters"
+          aria-label="Close filters"
         >
           <X className="w-5 h-5" />
         </button>
@@ -55,11 +69,12 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {/* Score Range */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="score-min" className="block text-sm font-medium text-gray-700 mb-2">
             Score Range
           </label>
           <div className="flex items-center space-x-2">
             <input
+              id="score-min"
               type="number"
               min="0"
               max="100"
@@ -69,9 +84,13 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
                 filters.scoreRange[1]
               ])}
               className="w-16 px-2 py-1 border border-gray-300 rounded text-sm"
+              placeholder="Min"
+              title="Minimum score"
+              aria-label="Minimum score"
             />
             <span className="text-gray-500">-</span>
             <input
+              id="score-max"
               type="number"
               min="0"
               max="100"
@@ -81,16 +100,20 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
                 parseInt(e.target.value) || 100
               ])}
               className="w-16 px-2 py-1 border border-gray-300 rounded text-sm"
+              placeholder="Max"
+              title="Maximum score"
+              aria-label="Maximum score"
             />
           </div>
         </div>
 
         {/* Industries */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="industries-select" className="block text-sm font-medium text-gray-700 mb-2">
             Industries
           </label>
           <select
+            id="industries-select"
             multiple
             value={filters.industries}
             onChange={(e) => handleFilterChange('industries', 
@@ -98,6 +121,7 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
             )}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
             size={4}
+            aria-label="Industries"
           >
             {industries.map(industry => (
               <option key={industry} value={industry}>{industry}</option>
@@ -107,10 +131,11 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
 
         {/* Company Sizes */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="company-sizes-select" className="block text-sm font-medium text-gray-700 mb-2">
             Company Size
           </label>
           <select
+            id="company-sizes-select"
             multiple
             value={filters.companySizes}
             onChange={(e) => handleFilterChange('companySizes', 
@@ -118,6 +143,7 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
             )}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
             size={4}
+            aria-label="Company sizes"
           >
             {companySizes.map(size => (
               <option key={size} value={size}>{size}</option>
@@ -127,10 +153,11 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
 
         {/* Statuses */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="statuses-select" className="block text-sm font-medium text-gray-700 mb-2">
             Status
           </label>
           <select
+            id="statuses-select"
             multiple
             value={filters.statuses}
             onChange={(e) => handleFilterChange('statuses', 
@@ -138,6 +165,7 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
             )}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
             size={4}
+            aria-label="Statuses"
           >
             {statuses.map(status => (
               <option key={status} value={status}>
@@ -149,10 +177,11 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
 
         {/* Sources */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="sources-select" className="block text-sm font-medium text-gray-700 mb-2">
             Source
           </label>
           <select
+            id="sources-select"
             multiple
             value={filters.sources}
             onChange={(e) => handleFilterChange('sources', 
@@ -160,6 +189,7 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
             )}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
             size={4}
+            aria-label="Sources"
           >
             {sources.map(source => (
               <option key={source} value={source}>{source}</option>
@@ -169,11 +199,12 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
 
         {/* Date Range */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="date-range-start" className="block text-sm font-medium text-gray-700 mb-2">
             Date Range
           </label>
           <div className="space-y-2">
             <input
+              id="date-range-start"
               type="date"
               value={filters.dateRange[0]}
               onChange={(e) => handleFilterChange('dateRange', [
@@ -181,8 +212,11 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
                 filters.dateRange[1]
               ])}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              title="Start date"
+              aria-label="Start date"
             />
             <input
+              id="date-range-end"
               type="date"
               value={filters.dateRange[1]}
               onChange={(e) => handleFilterChange('dateRange', [
@@ -190,6 +224,8 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
                 e.target.value
               ])}
               className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              title="End date"
+              aria-label="End date"
             />
           </div>
         </div>
