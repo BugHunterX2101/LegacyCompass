@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Lead } from '../../types';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { ScoreCircle } from '../common/ScoreCircle';
-import { enrichLead } from '../../services/leadService';
+import { enrichLeadWithRealData } from '../../services/realTimeLeadService';
 import { 
   SparklesIcon, 
   CheckCircleIcon, 
@@ -60,7 +60,7 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
       const lead = leads.find(l => l.id === leadId);
       if (!lead) throw new Error('Lead not found');
       
-      await enrichLead(lead);
+      await enrichLeadWithRealData(lead);
       setEnrichmentStatus(prev => ({ ...prev, [leadId]: 'success' }));
       onEnrich(leadId);
       

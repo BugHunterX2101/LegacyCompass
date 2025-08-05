@@ -1,4 +1,6 @@
 import React from 'react';
+import { AnalyticsService } from '../../services/analyticsService';
+import { Lead } from '../../types';
 import { 
   UserGroupIcon,
   CheckCircleIcon,
@@ -7,19 +9,16 @@ import {
 } from '@heroicons/react/24/outline';
 
 interface DashboardStatsProps {
-  stats: {
-    totalLeads: number;
-    qualifiedLeads: number;
-    averageScore: number;
-    conversionRate: number;
-  };
+  leads: Lead[];
 }
 
-export const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
+export const DashboardStats: React.FC<DashboardStatsProps> = ({ leads }) => {
+  const analytics = AnalyticsService.calculateAnalytics(leads);
+  
   const statCards = [
     {
       title: 'Total Leads',
-      value: stats.totalLeads.toLocaleString(),
+      value: analytics.totalLeads.toLocaleString(),
       icon: UserGroupIcon,
       color: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-500/10',
@@ -28,7 +27,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
     },
     {
       title: 'Qualified Leads',
-      value: stats.qualifiedLeads.toLocaleString(),
+      value: analytics.qualifiedLeads.toLocaleString(),
       icon: CheckCircleIcon,
       color: 'from-green-500 to-green-600',
       bgColor: 'bg-green-500/10',
@@ -37,7 +36,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
     },
     {
       title: 'Average Score',
-      value: `${stats.averageScore}/100`,
+      value: `${analytics.averageScore}/100`,
       icon: ChartBarIcon,
       color: 'from-purple-500 to-purple-600',
       bgColor: 'bg-purple-500/10',
@@ -46,7 +45,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
     },
     {
       title: 'Conversion Rate',
-      value: `${stats.conversionRate}%`,
+      value: `${analytics.conversionRate}%`,
       icon: ArrowTrendingUpIcon,
       color: 'from-orange-500 to-orange-600',
       bgColor: 'bg-orange-500/10',
@@ -86,9 +85,9 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ stats }) => {
               <div 
                 className={`h-2 rounded-full bg-gradient-to-r ${stat.color} transition-all duration-500 ${
                   stat.title === 'Average Score' 
-                    ? `w-[${stats.averageScore}%]` 
+                    ? `w-[${analytics.averageScore}%]` 
                     : stat.title === 'Conversion Rate'
-                    ? `w-[${stats.conversionRate}%]`
+                    ? `w-[${analytics.conversionRate}%]`
                     : `w-[${Math.min((parseInt(stat.value.replace(/,/g, '')) / 1000) * 100, 100)}%]`
                 }`}
               ></div>

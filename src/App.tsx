@@ -10,7 +10,11 @@ import { AdvancedSearch } from './components/search/AdvancedSearch';
 import { EnrichmentPanel } from './components/enrichment/EnrichmentPanel';
 import { ImportModal } from './components/import/ImportModal';
 import { ScrapeModal } from './components/scraping/ScrapeModal';
-import { generateMockLeads, exportLeadsToCSV, downloadFile } from './services/leadService';
+import { NotificationContainer } from './components/common/NotificationContainer';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { getInitialLeads, exportLeadsToCSV, downloadFile } from './services/leadService';
+import { subscribeToLeadUpdates } from './services/realTimeLeadService';
+import { notificationService } from './services/notificationService';
 
 export interface LeadTableProps {
   leads: Lead[];
@@ -33,9 +37,16 @@ function App() {
 
   // Initialize with mock data
   useEffect(() => {
-    const mockLeads = generateMockLeads(100);
-    setLeads(mockLeads);
-    setFilteredLeads(mockLeads);
+    const initialLeads = getInitialLeads();
+    setLeads(initialLeads);
+    setFilteredLeads(initialLeads);
+
+    // Subscribe to real-time updates
+    const unsubscribe = subscribeToLeadUpdates((updatedLeads) => {
+      setLeads(updatedLeads);
+    });
+
+    return unsubscribe;
   }, []);
 
   // Apply search filters
@@ -97,6 +108,10 @@ function App() {
     }));
     
     setLeads(prevLeads => [...prevLeads, ...newLeads]);
+    notificationService.success(
+      'Import Successful',
+      `Successfully imported ${newLeads.length} leads`
+    );
     setShowImportModal(false);
   };
 
@@ -109,6 +124,10 @@ function App() {
     }));
     
     setLeads(prevLeads => [...prevLeads, ...newLeads]);
+    notificationService.success(
+      'Scraping Complete',
+      `Successfully scraped ${newLeads.length} new leads`
+    );
     setShowScrapeModal(false);
   };
 
@@ -126,9 +145,16 @@ function App() {
       // Export as CSV by default, could add format selection
       const csvData = exportLeadsToCSV(leadsToExport);
       downloadFile(csvData, `leads-export-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
+      notificationService.success(
+        'Export Complete',
+        `Successfully exported ${leadsToExport.length} leads`
+      );
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Export failed. Please try again.');
+      notificationService.error(
+        'Export Failed',
+        'There was an error exporting your leads. Please try again.'
+      );
     }
   };
 
@@ -196,7 +222,7 @@ function App() {
       case 'dashboard':
         return (
           <div className="space-y-6">
-            <DashboardStats stats={dashboardStats} />
+            <DashboardStats leads={leads} />
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               <TopIndustriesChart data={topIndustries} />
               <ScoreDistributionChart data={scoreDistribution} />
@@ -233,85 +259,90 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0D1117]">
-      <TopBar 
-        onImport={() => setShowImportModal(true)}
-        onScrape={() => setShowScrapeModal(true)}
-        onExport={handleExport}
-      />
-      
-      {/* Navigation */}
-      <nav className="bg-[#161B22] border-b border-gray-700">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex space-x-8">
-            {[
-              { id: 'home', label: 'Home', icon: '🏠' },
-              { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-              { id: 'leads', label: 'Leads', icon: '👥' },
-              { id: 'enrichment', label: 'Enrichment', icon: '✨' }
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id as TabType)}
-                className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
-                  activeTab === tab.id
-                    ? 'border-blue-500 text-blue-400'
-                    : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300'
-                }`}
-              >
-                <span>{tab.icon}</span>
-                <span>{tab.label}</span>
-                {tab.id === 'leads' && filteredLeads.length > 0 && (
-                  <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                    {filteredLeads.length}
-                  </span>
+    <ErrorBoundary>
+      <div className="min-h-screen bg-[#0D1117]">
+        <TopBar 
+          onImport={() => setShowImportModal(true)}
+          onScrape={() => setShowScrapeModal(true)}
+          onExport={handleExport}
+        />
+        
+        {/* Navigation */}
+        <nav className="bg-[#161B22] border-b border-gray-700">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex space-x-8">
+              {[
+                { id: 'home', label: 'Home', icon: '🏠' },
+                { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+                { id: 'leads', label: 'Leads', icon: '👥' },
+                { id: 'enrichment', label: 'Enrichment', icon: '✨' }
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id as TabType)}
+                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
+                    activeTab === tab.id
+                      ? 'border-blue-500 text-blue-400'
+                      : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300'
+                  }`}
+                >
+                  <span>{tab.icon}</span>
+                  <span>{tab.label}</span>
+                  {tab.id === 'leads' && filteredLeads.length > 0 && (
+                    <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                      {filteredLeads.length}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </div>
+        </nav>
+
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          {renderContent()}
+        </main>
+
+        {/* Modals */}
+        <ImportModal 
+          isOpen={showImportModal}
+          onClose={() => setShowImportModal(false)}
+          onImport={handleImport}
+        />
+        
+        <ScrapeModal 
+          isOpen={showScrapeModal}
+          onClose={() => setShowScrapeModal(false)}
+          onComplete={handleScrapeComplete}
+        />
+
+        {/* Footer */}
+        <footer className="bg-[#161B22] border-t border-gray-700 mt-12">
+          <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-400">
+                © 2024 LegacyCompass Lead Intelligence Platform. Built with React & TypeScript.
+              </div>
+              <div className="flex items-center space-x-4 text-sm text-gray-400">
+                <span>Total Leads: {leads.length}</span>
+                <span>•</span>
+                <span>Filtered: {filteredLeads.length}</span>
+                {selectedLeads.length > 0 && (
+                  <>
+                    <span>•</span>
+                    <span>Selected: {selectedLeads.length}</span>
+                  </>
                 )}
-              </button>
-            ))}
-          </div>
-        </div>
-      </nav>
-
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {renderContent()}
-      </main>
-
-      {/* Modals */}
-      <ImportModal 
-        isOpen={showImportModal}
-        onClose={() => setShowImportModal(false)}
-        onImport={handleImport}
-      />
-      
-      <ScrapeModal 
-        isOpen={showScrapeModal}
-        onClose={() => setShowScrapeModal(false)}
-        onComplete={handleScrapeComplete}
-      />
-
-      {/* Footer */}
-      <footer className="bg-[#161B22] border-t border-gray-700 mt-12">
-        <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-gray-400">
-              © 2024 Lead Management System. Built with React & TypeScript.
-            </div>
-            <div className="flex items-center space-x-4 text-sm text-gray-400">
-              <span>Total Leads: {leads.length}</span>
-              <span>•</span>
-              <span>Filtered: {filteredLeads.length}</span>
-              {selectedLeads.length > 0 && (
-                <>
-                  <span>•</span>
-                  <span>Selected: {selectedLeads.length}</span>
-                </>
-              )}
+              </div>
             </div>
           </div>
-        </div>
-      </footer>
-    </div>
+        </footer>
+        
+        {/* Notifications */}
+        <NotificationContainer />
+      </div>
+    </ErrorBoundary>
   );
 }
 

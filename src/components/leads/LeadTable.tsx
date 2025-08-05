@@ -75,6 +75,12 @@ export const LeadTable: React.FC<LeadTableProps> = ({
     }
   };
 
+  const handleEmailClick = (email: string, leadName: string) => {
+    const subject = encodeURIComponent(`Partnership Opportunity - ${leadName}`);
+    const body = encodeURIComponent(`Hi,\n\nI hope this email finds you well. I'd love to discuss a potential partnership opportunity.\n\nBest regards`);
+    window.open(`mailto:${email}?subject=${subject}&body=${body}`);
+  };
+
   const getStatusColor = (status: Lead['status']) => {
     switch (status) {
       case 'new': return 'bg-blue-100 text-blue-800';
@@ -232,29 +238,25 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                     {lead.email && (
                       <div className="flex items-center text-sm">
                         <EnvelopeIcon className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
-                        <a 
-                          href={`mailto:${lead.email}`}
+                        <button
+                          onClick={() => handleEmailClick(lead.email!, lead.companyName)}
                           className="text-blue-400 hover:text-blue-300 transition-colors truncate"
                           title={lead.email}
-                          target="_blank"
-                          rel="noopener noreferrer"
                         >
                           {lead.email}
-                        </a>
+                        </button>
                       </div>
                     )}
                     {lead.gmail && (
                       <div className="flex items-center text-sm">
                         <EnvelopeIcon className="h-4 w-4 text-red-400 mr-2 flex-shrink-0" />
-                        <a 
-                          href={`mailto:${lead.gmail}`}
+                        <button
+                          onClick={() => handleEmailClick(lead.gmail!, lead.companyName)}
                           className="text-red-400 hover:text-red-300 transition-colors truncate"
                           title={lead.gmail}
-                          target="_blank"
-                          rel="noopener noreferrer"
                         >
                           {lead.gmail}
-                        </a>
+                        </button>
                       </div>
                     )}
                     {lead.phone && (

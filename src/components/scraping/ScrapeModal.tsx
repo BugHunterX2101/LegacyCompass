@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { XMarkIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { LoadingSpinner } from '../common/LoadingSpinner';
-import { scrapeLeadsFromSource } from '../../services/leadService';
+import { scrapeLeadsFromSource } from '../../services/realTimeLeadService';
 
 interface ScrapeModalProps {
   isOpen: boolean;
@@ -78,7 +78,7 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
       }
 
       // Actually scrape the leads
-      const leads = await scrapeLeadsFromSource(selectedSource, maxResults);
+      const leads = await scrapeLeadsFromSource(selectedSource, searchQuery, maxResults);
       
       setProgress(100);
       setCurrentStep('Scraping completed!');
