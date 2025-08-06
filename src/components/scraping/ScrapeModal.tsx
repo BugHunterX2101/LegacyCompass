@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { XMarkIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { LoadingSpinner } from '../common/LoadingSpinner';
-import { scrapeLeadsFromSource } from '../../services/realTimeLeadService';
+import { scrapeLeadsFromSource } from '../../services/leadService';
 
 interface ScrapeModalProps {
   isOpen: boolean;
