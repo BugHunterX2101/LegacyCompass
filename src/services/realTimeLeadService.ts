@@ -349,11 +349,26 @@ const realTimeLeads: Omit<Lead, 'id'>[] = [
 // Generate unique IDs for leads
 let leadIdCounter = 1000;
 
+// Performance optimization: Cache leads
+let cachedLeads: Lead[] | null = null;
+let cacheTimestamp = 0;
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 export const getRealTimeLeads = (): Lead[] => {
-  return realTimeLeads.map(lead => ({
+  const now = Date.now();
+  
+  // Return cached leads if still valid
+  if (cachedLeads && (now - cacheTimestamp) < CACHE_DURATION) {
+    return cachedLeads;
+  }
+  
+  // Generate fresh leads
+  cachedLeads = realTimeLeads.map(lead => ({
     ...lead,
     id: `lead-${leadIdCounter++}`
   }));
+  
+  cacheTimestamp = now;
+  return cachedLeads;
 };
 
 // Simulate real-time lead updates
@@ -364,18 +379,27 @@ export const subscribeToLeadUpdates = (callback: (leads: Lead[]) => void) => {
   // Simulate periodic updates
   const interval = setInterval(() => {
     // Randomly update some leads
-    const updatedLeads = leads.map(lead => {
+    const updatedLeads = leads.map((lead, index) => {
       if (Math.random() < 0.1) { // 10% chance of update
         return {
           ...lead,
-          score: Math.max(0, Math.min(100, lead.score + (Math.random() - 0.5) * 10)),
+          score: Math.max(0, Math.min(100, lead.score + (Math.random() - 0.5) * 5)),
           updatedAt: new Date()
         };
       }
       return lead;
     });
-    callback(updatedLeads);
-  }, 30000); // Update every 30 seconds
+    
+    // Only callback if there are actual changes
+    const hasChanges = updatedLeads.some((lead, index) => 
+      lead.score !== leads[index].score || 
+      lead.updatedAt !== leads[index].updatedAt
+    );
+    
+    if (hasChanges) {
+      callback(updatedLeads);
+    }
+  }, 60000); // Update every 60 seconds for better performance
 
   return () => clearInterval(interval);
 };

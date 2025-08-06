@@ -12,6 +12,12 @@ import { ImportModal } from './components/import/ImportModal';
 import { ScrapeModal } from './components/scraping/ScrapeModal';
 import { NotificationContainer } from './components/common/NotificationContainer';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
+import { AIInsightsPanel } from './components/ai/AIInsightsPanel';
+import { AIEmailGenerator } from './components/ai/AIEmailGenerator';
+import { AIMarketAnalysisComponent } from './components/ai/AIMarketAnalysis';
+import { VirtualizedLeadTable } from './components/performance/VirtualizedLeadTable';
+import { performanceService } from './services/performanceService';
+import { PerformanceMonitor } from './components/performance/PerformanceMonitor';
 import { getInitialLeads, exportLeadsToCSV, downloadFile } from './services/leadService';
 import { subscribeToLeadUpdates } from './services/realTimeLeadService';
 import { notificationService } from './services/notificationService';
@@ -23,7 +29,7 @@ export interface LeadTableProps {
   // ...other props
 }
 
-type TabType = 'home' | 'dashboard' | 'leads' | 'enrichment';
+type TabType = 'home' | 'dashboard' | 'leads' | 'enrichment' | 'ai-insights' | 'ai-email' | 'market-analysis';
 
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
@@ -34,6 +40,8 @@ function App() {
   const [showScrapeModal, setShowScrapeModal] = useState(false);
   const [searchFilters, setSearchFilters] = useState<SearchFilter[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [useVirtualization, setUseVirtualization] = useState(leads.length > 100);
 
   // Initialize with mock data
   useEffect(() => {
@@ -48,6 +56,11 @@ function App() {
 
     return unsubscribe;
   }, []);
+
+  // Update virtualization based on lead count
+  useEffect(() => {
+    setUseVirtualization(leads.length > 100);
+  }, [leads.length]);
 
   // Apply search filters
   useEffect(() => {
@@ -237,11 +250,20 @@ function App() {
               onSearch={handleSearch}
               onResultsCount={() => {}} 
             />
-            <LeadTable 
-              leads={filteredLeads}
-              selectedLeads={selectedLeads}
-              onLeadSelect={handleLeadSelection}
-            />
+            {useVirtualization ? (
+              <VirtualizedLeadTable 
+                leads={filteredLeads}
+                selectedLeads={selectedLeads}
+                onLeadSelect={handleLeadSelection}
+                containerHeight={600}
+              />
+            ) : (
+              <LeadTable 
+                leads={filteredLeads}
+                selectedLeads={selectedLeads}
+                onLeadSelect={handleLeadSelection}
+              />
+            )}
           </div>
         );
       
@@ -252,6 +274,30 @@ function App() {
             onEnrich={handleEnrichLead}
           />
         );
+      
+      case 'ai-insights':
+        return selectedLead ? (
+          <AIInsightsPanel 
+            lead={selectedLead}
+            onActionTaken={(action) => console.log('Action taken:', action)}
+          />
+        ) : (
+          <div className="text-center py-12 text-gray-400">
+            Select a lead to view AI insights
+          </div>
+        );
+      
+      case 'ai-email':
+        return selectedLead ? (
+          <AIEmailGenerator lead={selectedLead} />
+        ) : (
+          <div className="text-center py-12 text-gray-400">
+            Select a lead to generate AI emails
+          </div>
+        );
+      
+      case 'market-analysis':
+        return <AIMarketAnalysisComponent industry="Technology" location="San Francisco, CA" />;
       
       default:
         return null;
@@ -275,7 +321,10 @@ function App() {
                 { id: 'home', label: 'Home', icon: '🏠' },
                 { id: 'dashboard', label: 'Dashboard', icon: '📊' },
                 { id: 'leads', label: 'Leads', icon: '👥' },
-                { id: 'enrichment', label: 'Enrichment', icon: '✨' }
+                { id: 'enrichment', label: 'Enrichment', icon: '✨' },
+                { id: 'ai-insights', label: 'AI Insights', icon: '🧠' },
+                { id: 'ai-email', label: 'AI Email', icon: '📧' },
+                { id: 'market-analysis', label: 'Market AI', icon: '📈' }
               ].map((tab) => (
                 <button
                   key={tab.id}
@@ -293,6 +342,11 @@ function App() {
                       {filteredLeads.length}
                     </span>
                   )}
+                  {(tab.id === 'ai-insights' || tab.id === 'ai-email') && selectedLead && (
+                    <span className="bg-green-600 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                      1
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
@@ -301,6 +355,42 @@ function App() {
 
         {/* Main Content */}
         <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          {/* Lead Selection for AI Features */}
+          {(activeTab === 'ai-insights' || activeTab === 'ai-email') && !selectedLead && (
+            <div className="mb-6 bg-[#1E2328] rounded-lg border border-gray-700 p-4">
+              <h3 className="text-lg font-semibold text-white mb-3">Select a Lead</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                {filteredLeads.slice(0, 6).map((lead) => (
+                  <button
+                    key={lead.id}
+                    onClick={() => setSelectedLead(lead)}
+                    className="p-3 bg-[#161B22] border border-gray-700 rounded-lg hover:border-blue-500 transition-colors text-left"
+                  >
+                    <div className="font-medium text-white">{lead.companyName}</div>
+                    <div className="text-sm text-gray-400">{lead.industry}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {selectedLead && (activeTab === 'ai-insights' || activeTab === 'ai-email') && (
+            <div className="mb-6 bg-[#1E2328] rounded-lg border border-gray-700 p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">{selectedLead.companyName}</h3>
+                  <p className="text-sm text-gray-400">{selectedLead.industry} • {selectedLead.location}</p>
+                </div>
+                <button
+                  onClick={() => setSelectedLead(null)}
+                  className="text-gray-400 hover:text-white"
+                >
+                  Change Lead
+                </button>
+              </div>
+            </div>
+          )}
+          
           {renderContent()}
         </main>
 
@@ -341,6 +431,9 @@ function App() {
         
         {/* Notifications */}
         <NotificationContainer />
+        
+        {/* Performance Monitor (only in development) */}
+        {process.env.NODE_ENV === 'development' && <PerformanceMonitor />}
       </div>
     </ErrorBoundary>
   );
