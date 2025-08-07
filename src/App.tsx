@@ -22,13 +22,6 @@ import { getInitialLeads, exportLeadsToCSV, downloadFile } from './services/lead
 import { subscribeToLeadUpdates } from './services/realTimeLeadService';
 import { notificationService } from './services/notificationService';
 
-export interface LeadTableProps {
-  leads: Lead[];
-  selectedLeads: string[];
-  onSelection: (leadIds: string[]) => void;
-  // ...other props
-}
-
 type TabType = 'home' | 'dashboard' | 'leads' | 'enrichment' | 'ai-insights' | 'ai-email' | 'market-analysis';
 
 function App() {

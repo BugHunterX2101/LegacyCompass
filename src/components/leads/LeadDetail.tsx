@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
 import { Lead } from '../../types';
 import { ScoreCircle } from '../common/ScoreCircle';
-import { Building, MapPin, Calendar, Mail, Phone, Linkedin, Target, TrendingUp, Edit3, Save, X, ExternalLink, Copy, CheckCircle } from 'lucide-react';
+import { Building, MapPin, Calendar, Mail, Phone, Target, TrendingUp, Edit3, Save, X, ExternalLink, Copy, CheckCircle } from 'lucide-react';
+import { 
+  ArrowTopRightOnSquareIcon as LinkedinIcon
+} from '@heroicons/react/24/outline';
 
 interface LeadDetailProps {
   lead: Lead;
@@ -275,7 +278,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
                 )}
                 {lead.linkedinProfile && (
                   <div className="flex items-center text-sm">
-                    <Linkedin className="w-4 h-4 mr-3 text-blue-600" />
+                    <LinkedinIcon className="w-4 h-4 mr-3 text-blue-600" />
                     <a href={lead.linkedinProfile} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-700 flex items-center">
                       LinkedIn Profile
                       <ExternalLink className="w-3 h-3 ml-1" />
@@ -331,7 +334,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
                     rel="noopener noreferrer"
                     className="w-full flex items-center justify-center px-4 py-2 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors"
                   >
-                    <Linkedin className="w-4 h-4 mr-2" />
+                    <LinkedinIcon className="w-4 h-4 mr-2" />
                     View LinkedIn
                   </a>
                 )}

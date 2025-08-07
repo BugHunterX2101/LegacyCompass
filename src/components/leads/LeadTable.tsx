@@ -83,12 +83,12 @@ export const LeadTable: React.FC<LeadTableProps> = ({
 
   const getStatusColor = (status: Lead['status']) => {
     switch (status) {
-      case 'new': return 'bg-blue-100 text-blue-800';
-      case 'contacted': return 'bg-yellow-100 text-yellow-800';
-      case 'qualified': return 'bg-green-100 text-green-800';
-      case 'converted': return 'bg-purple-100 text-purple-800';
-      case 'rejected': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case 'new': return 'bg-blue-600/20 text-blue-300 border border-blue-600/30';
+      case 'contacted': return 'bg-yellow-600/20 text-yellow-300 border border-yellow-600/30';
+      case 'qualified': return 'bg-green-600/20 text-green-300 border border-green-600/30';
+      case 'converted': return 'bg-purple-600/20 text-purple-300 border border-purple-600/30';
+      case 'rejected': return 'bg-red-600/20 text-red-300 border border-red-600/30';
+      default: return 'bg-gray-600/20 text-gray-300 border border-gray-600/30';
     }
   };
 

@@ -48,7 +48,8 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
 
   useEffect(() => {
     onSearch(filters, query);
-    onResultsCount(0); // Add default call to onResultsCount
+    // Calculate results count based on current filters and query
+    // This would normally be done by the parent component
   }, [filters, query, onSearch, onResultsCount]);
 
   const addFilter = () => {

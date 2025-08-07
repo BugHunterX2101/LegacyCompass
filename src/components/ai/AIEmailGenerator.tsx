@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Lead } from '../../types';
-import { aiService, AIEmailTemplate } from '../../services/aiService';
+import { aiService } from '../../services/aiService';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { 
   EnvelopeIcon, 
@@ -8,6 +8,13 @@ import {
   ClipboardDocumentIcon,
   PaperAirplaneIcon
 } from '@heroicons/react/24/outline';
+
+interface AIEmailTemplate {
+  subject: string;
+  body: string;
+  tone: 'professional' | 'casual' | 'urgent' | 'friendly';
+  personalization: string[];
+}
 
 interface AIEmailGeneratorProps {
   lead: Lead;

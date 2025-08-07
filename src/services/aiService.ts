@@ -1,6 +1,6 @@
 import { Lead } from '../types';
 
-export interface AIInsight {
+interface AIInsight {
   type: 'opportunity' | 'risk' | 'recommendation' | 'prediction';
   title: string;
   description: string;
@@ -10,7 +10,7 @@ export interface AIInsight {
   suggestedActions?: string[];
 }
 
-export interface AIAnalysis {
+interface AIAnalysis {
   leadScore: number;
   insights: AIInsight[];
   predictedConversion: number;
@@ -20,7 +20,7 @@ export interface AIAnalysis {
   marketTrends: string[];
 }
 
-export interface AIEnrichmentResult {
+interface AIEnrichmentResult {
   contactInfo: {
     email?: string;
     phone?: string;
@@ -43,14 +43,14 @@ export interface AIEnrichmentResult {
   confidence: number;
 }
 
-export interface AIEmailTemplate {
+interface AIEmailTemplate {
   subject: string;
   body: string;
   tone: 'professional' | 'casual' | 'urgent' | 'friendly';
   personalization: string[];
 }
 
-export interface AIMarketAnalysis {
+interface AIMarketAnalysis {
   industryTrends: string[];
   competitorInsights: string[];
   marketOpportunities: string[];

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { performanceService } from '../../services/performanceService';
-import { ChartBarIcon, ClockIcon, CpuChipIcon } from '@heroicons/react/24/outline';
+import { CpuChipIcon } from '@heroicons/react/24/outline';
 
 export const PerformanceMonitor: React.FC = () => {
   const [metrics, setMetrics] = useState({

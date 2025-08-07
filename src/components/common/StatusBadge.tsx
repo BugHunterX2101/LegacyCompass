@@ -13,48 +13,48 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'md' })
 
   const statusConfig = {
     new: {
-      bg: 'bg-blue-100',
-      text: 'text-blue-800',
+      bg: 'bg-blue-600/20',
+      text: 'text-blue-300',
       label: 'New'
     },
     qualified: {
-      bg: 'bg-green-100',
-      text: 'text-green-800',
+      bg: 'bg-green-600/20',
+      text: 'text-green-300',
       label: 'Qualified'
     },
     unqualified: {
-      bg: 'bg-red-100',
-      text: 'text-red-800',
+      bg: 'bg-red-600/20',
+      text: 'text-red-300',
       label: 'Unqualified'
     },
     contacted: {
-      bg: 'bg-yellow-100',
-      text: 'text-yellow-800',
+      bg: 'bg-yellow-600/20',
+      text: 'text-yellow-300',
       label: 'Contacted'
     },
     converted: {
-      bg: 'bg-purple-100',
-      text: 'text-purple-800',
+      bg: 'bg-purple-600/20',
+      text: 'text-purple-300',
       label: 'Converted'
     },
     rejected: {
-      bg: 'bg-red-100',
-      text: 'text-red-800',
+      bg: 'bg-red-600/20',
+      text: 'text-red-300',
       label: 'Rejected'
     },
     hot: {
-      bg: 'bg-red-100',
-      text: 'text-red-800',
+      bg: 'bg-red-600/20',
+      text: 'text-red-300',
       label: 'Hot'
     },
     warm: {
-      bg: 'bg-orange-100',
-      text: 'text-orange-800',
+      bg: 'bg-orange-600/20',
+      text: 'text-orange-300',
       label: 'Warm'
     },
     cold: {
-      bg: 'bg-gray-100',
-      text: 'text-gray-800',
+      bg: 'bg-gray-600/20',
+      text: 'text-gray-300',
       label: 'Cold'
     }
   };

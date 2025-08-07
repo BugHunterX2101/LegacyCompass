@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { aiService, AIMarketAnalysis } from '../../services/aiService';
+import { aiService } from '../../services/aiService';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { 
   ChartBarIcon, 
@@ -8,6 +8,14 @@ import {
   LightBulbIcon,
   UserGroupIcon
 } from '@heroicons/react/24/outline';
+
+interface AIMarketAnalysis {
+  industryTrends: string[];
+  competitorInsights: string[];
+  marketOpportunities: string[];
+  riskFactors: string[];
+  recommendations: string[];
+}
 
 interface AIMarketAnalysisProps {
   industry: string;

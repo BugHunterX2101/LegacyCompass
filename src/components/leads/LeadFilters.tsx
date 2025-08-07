@@ -1,5 +1,5 @@
-import React from 'react';
-import { Filter, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { XMarkIcon } from '@heroicons/react/24/outline';
 import { getSearchSuggestions } from '../../data/searchSuggestions';
 
 // Define a type for filters
@@ -38,38 +38,26 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
     onFiltersChange({ ...filters, [key]: value });
   };
 
-  if (!isOpen) {
-    return (
-      <button
-        onClick={onToggle}
-        className="flex items-center px-4 py-2 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
-        title="Open filters"
-        aria-label="Open filters"
-      >
-        <Filter className="w-4 h-4 mr-2" />
-        Filters
-      </button>
-    );
-  }
+  if (!isOpen) return null;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6">
+    <div className="bg-[#1E2328] border border-gray-700 rounded-lg p-6 mb-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-gray-900" id="filters-title">Filters</h3>
+        <h3 className="text-lg font-semibold text-white" id="filters-title">Filters</h3>
         <button
           onClick={onToggle}
-          className="text-gray-400 hover:text-gray-600 transition-colors"
+          className="text-gray-400 hover:text-white transition-colors"
           title="Close filters"
           aria-label="Close filters"
         >
-          <X className="w-5 h-5" />
+          <XMarkIcon className="w-5 h-5" />
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
         {/* Score Range */}
         <div>
-          <label htmlFor="score-min" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="score-min" className="block text-sm font-medium text-gray-300 mb-2">
             Score Range
           </label>
           <div className="flex items-center space-x-2">
@@ -83,12 +71,12 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
                 parseInt(e.target.value) || 0,
                 filters.scoreRange[1]
               ])}
-              className="w-16 px-2 py-1 border border-gray-300 rounded text-sm"
+              className="w-16 px-2 py-1 bg-[#0D1117] border border-gray-600 rounded text-white text-sm"
               placeholder="Min"
               title="Minimum score"
               aria-label="Minimum score"
             />
-            <span className="text-gray-500">-</span>
+            <span className="text-gray-400">-</span>
             <input
               id="score-max"
               type="number"
@@ -99,7 +87,7 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
                 filters.scoreRange[0],
                 parseInt(e.target.value) || 100
               ])}
-              className="w-16 px-2 py-1 border border-gray-300 rounded text-sm"
+              className="w-16 px-2 py-1 bg-[#0D1117] border border-gray-600 rounded text-white text-sm"
               placeholder="Max"
               title="Maximum score"
               aria-label="Maximum score"
@@ -109,7 +97,7 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
 
         {/* Industries */}
         <div>
-          <label htmlFor="industries-select" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="industries-select" className="block text-sm font-medium text-gray-300 mb-2">
             Industries
           </label>
           <select
@@ -119,7 +107,7 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
             onChange={(e) => handleFilterChange('industries', 
               Array.from(e.target.selectedOptions, option => option.value)
             )}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            className="w-full px-3 py-2 bg-[#0D1117] border border-gray-600 rounded-md text-white text-sm"
             size={4}
             aria-label="Industries"
           >
@@ -131,7 +119,7 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
 
         {/* Company Sizes */}
         <div>
-          <label htmlFor="company-sizes-select" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="company-sizes-select" className="block text-sm font-medium text-gray-300 mb-2">
             Company Size
           </label>
           <select
@@ -141,7 +129,7 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
             onChange={(e) => handleFilterChange('companySizes', 
               Array.from(e.target.selectedOptions, option => option.value)
             )}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            className="w-full px-3 py-2 bg-[#0D1117] border border-gray-600 rounded-md text-white text-sm"
             size={4}
             aria-label="Company sizes"
           >
@@ -153,7 +141,7 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
 
         {/* Statuses */}
         <div>
-          <label htmlFor="statuses-select" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="statuses-select" className="block text-sm font-medium text-gray-300 mb-2">
             Status
           </label>
           <select
@@ -163,7 +151,7 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
             onChange={(e) => handleFilterChange('statuses', 
               Array.from(e.target.selectedOptions, option => option.value)
             )}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            className="w-full px-3 py-2 bg-[#0D1117] border border-gray-600 rounded-md text-white text-sm"
             size={4}
             aria-label="Statuses"
           >
@@ -177,7 +165,7 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
 
         {/* Sources */}
         <div>
-          <label htmlFor="sources-select" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="sources-select" className="block text-sm font-medium text-gray-300 mb-2">
             Source
           </label>
           <select
@@ -187,7 +175,7 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
             onChange={(e) => handleFilterChange('sources', 
               Array.from(e.target.selectedOptions, option => option.value)
             )}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+            className="w-full px-3 py-2 bg-[#0D1117] border border-gray-600 rounded-md text-white text-sm"
             size={4}
             aria-label="Sources"
           >
@@ -199,7 +187,7 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
 
         {/* Date Range */}
         <div>
-          <label htmlFor="date-range-start" className="block text-sm font-medium text-gray-700 mb-2">
+          <label htmlFor="date-range-start" className="block text-sm font-medium text-gray-300 mb-2">
             Date Range
           </label>
           <div className="space-y-2">
@@ -211,7 +199,7 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
                 e.target.value,
                 filters.dateRange[1]
               ])}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="w-full px-3 py-2 bg-[#0D1117] border border-gray-600 rounded-md text-white text-sm"
               title="Start date"
               aria-label="Start date"
             />
@@ -223,7 +211,7 @@ export const LeadFilters: React.FC<LeadFiltersProps> = ({
                 filters.dateRange[0],
                 e.target.value
               ])}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm"
+              className="w-full px-3 py-2 bg-[#0D1117] border border-gray-600 rounded-md text-white text-sm"
               title="End date"
               aria-label="End date"
             />

@@ -18,8 +18,7 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          ai: ['./src/services/aiService.ts'],
-          performance: ['./src/services/performanceService.ts'],
+          utils: ['./src/services/aiService', './src/services/performanceService'],
         },
       },
     },

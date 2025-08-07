@@ -2,7 +2,10 @@ import React from 'react';
 import { Lead } from '../../types';
 import { ScoreCircle } from '../common/ScoreCircle';
 import { StatusBadge } from '../common/StatusBadge';
-import { Building, MapPin, Calendar, Mail, Phone, Linkedin, Zap, ExternalLink } from 'lucide-react';
+import { Building, MapPin, Calendar, Mail, Phone, Zap, ExternalLink } from 'lucide-react';
+import { 
+  ArrowTopRightOnSquareIcon as LinkedinIcon
+} from '@heroicons/react/24/outline';
 
 interface LeadCardProps {
   lead: Lead;
@@ -108,7 +111,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onSelect, onEnrich, is
                 onClick={(e) => e.stopPropagation()}
                 title={`View ${lead.contactPerson || lead.companyName}'s LinkedIn`}
               >
-                <Linkedin className="w-4 h-4" />
+                <LinkedinIcon className="w-4 h-4" />
               </a>
             )}
             {lead.website && (

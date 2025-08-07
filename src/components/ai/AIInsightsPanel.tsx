@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Lead } from '../../types';
-import { aiService, AIAnalysis, AIInsight } from '../../services/aiService';
+import { aiService } from '../../services/aiService';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { 
   SparklesIcon, 
@@ -11,6 +11,26 @@ import {
   UserGroupIcon,
   ChartBarIcon
 } from '@heroicons/react/24/outline';
+
+interface AIInsight {
+  type: 'opportunity' | 'risk' | 'recommendation' | 'prediction';
+  title: string;
+  description: string;
+  confidence: number;
+  priority: 'high' | 'medium' | 'low';
+  actionable: boolean;
+  suggestedActions?: string[];
+}
+
+interface AIAnalysis {
+  leadScore: number;
+  insights: AIInsight[];
+  predictedConversion: number;
+  bestContactTime: string;
+  recommendedApproach: string;
+  competitorAnalysis: string[];
+  marketTrends: string[];
+}
 
 interface AIInsightsPanelProps {
   lead: Lead;
