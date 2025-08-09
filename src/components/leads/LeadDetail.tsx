@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { Lead } from '../../types';
 import { ScoreCircle } from '../common/ScoreCircle';
-import { Building, MapPin, Calendar, Mail, Phone, Target, TrendingUp, Edit3, Save, X, ExternalLink, Copy, CheckCircle } from 'lucide-react';
+import { Building, MapPin, Calendar, Mail, Phone, Target, Edit3, Save, X, ExternalLink, Copy, CheckCircle } from 'lucide-react';
+import { ArrowTrendingUpIcon } from '@heroicons/react/24/outline';
 import { 
   ArrowTopRightOnSquareIcon as LinkedinIcon
 } from '@heroicons/react/24/outline';
@@ -140,7 +141,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
                   <h2 className="text-2xl font-bold text-gray-900">{lead.companyName}</h2>
                   <p className="text-lg text-gray-600">{lead.contactPerson} {lead.title && `• ${lead.title}`}</p>
                 </div>
-              )}
+                <ArrowTrendingUpIcon className="w-5 h-5 text-gray-600" />
             </div>
             
             <div className="flex items-center space-x-4">
@@ -373,7 +374,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
                 </div>
                 {lead.revenue && (
                   <div className="flex items-center text-sm text-gray-600">
-                    <TrendingUp className="w-4 h-4 mr-3 text-gray-400" />
+                    <ArrowTrendingUpIcon className="w-4 h-4 mr-3 text-gray-400" />
                     ${lead.revenue.toLocaleString()} revenue
                   </div>
                 )}

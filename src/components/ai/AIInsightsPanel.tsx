@@ -6,7 +6,7 @@ import {
   SparklesIcon, 
   LightBulbIcon, 
   ExclamationTriangleIcon,
-  TrendingUpIcon,
+  ArrowTrendingUpIcon,
   ClockIcon,
   UserGroupIcon,
   ChartBarIcon
@@ -63,7 +63,7 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead, onAction
   const getInsightIcon = (type: AIInsight['type']) => {
     switch (type) {
       case 'opportunity':
-        return <TrendingUpIcon className="h-5 w-5 text-green-400" />;
+        return <ArrowTrendingUpIcon className="h-5 w-5 text-green-400" />;
       case 'risk':
         return <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />;
       case 'recommendation':
@@ -159,7 +159,7 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead, onAction
               <p className="text-sm text-gray-400">Conversion Probability</p>
               <p className="text-2xl font-bold text-green-400">{analysis.predictedConversion}%</p>
             </div>
-            <TrendingUpIcon className="h-8 w-8 text-green-400" />
+            <ArrowTrendingUpIcon className="h-8 w-8 text-green-400" />
           </div>
         </div>
 
@@ -217,7 +217,7 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead, onAction
                       ))}
                     </div>
                   </div>
-                )}
+              <ArrowTrendingUpIcon className="h-4 w-4 mr-1" />
               </div>
             </div>
           </div>
@@ -252,7 +252,7 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead, onAction
 
         <div className="bg-[#161B22] rounded-lg p-4 border border-gray-700">
           <h4 className="text-sm font-medium text-white mb-3 flex items-center">
-            <TrendingUpIcon className="h-4 w-4 mr-2 text-green-400" />
+            <ArrowTrendingUpIcon className="h-4 w-4 mr-2 text-green-400" />
             Market Trends
           </h4>
           <div className="space-y-2">

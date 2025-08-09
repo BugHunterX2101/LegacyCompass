@@ -3,7 +3,7 @@ import { aiService } from '../../services/aiService';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { 
   ChartBarIcon, 
-  TrendingUpIcon, 
+  ArrowTrendingUpIcon, 
   ExclamationTriangleIcon,
   LightBulbIcon,
   UserGroupIcon
@@ -71,7 +71,7 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({ ind
         {/* Industry Trends */}
         <div className="bg-[#161B22] rounded-lg p-4 border border-gray-700">
           <h4 className="text-md font-medium text-white mb-4 flex items-center">
-            <TrendingUpIcon className="h-4 w-4 mr-2 text-green-400" />
+            <ArrowTrendingUpIcon className="h-4 w-4 mr-2 text-green-400" />
             Industry Trends
           </h4>
           <div className="space-y-3">
