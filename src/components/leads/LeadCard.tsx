@@ -70,7 +70,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onSelect, onEnrich, is
           <div className="flex items-center space-x-2">
             {lead.email && (
               <a 
-                href={`mailto:${lead.email}`}
+                href={`https://mail.google.com/mail/?view=cm&fs=1&to=${lead.email}&su=${encodeURIComponent(`Partnership Opportunity - ${lead.companyName}`)}&body=${encodeURIComponent('Hi,\n\nI hope this email finds you well. I would love to discuss a potential partnership opportunity.\n\nBest regards')}`}
                 className="text-gray-500 hover:text-[#2563EB] transition-colors"
                 onClick={(e) => e.stopPropagation()}
                 title={`Email ${lead.contactPerson || lead.companyName}`}
@@ -82,7 +82,7 @@ export const LeadCard: React.FC<LeadCardProps> = ({ lead, onSelect, onEnrich, is
             )}
             {lead.gmail && (
               <a 
-                href={`mailto:${lead.gmail}`}
+                href={`https://mail.google.com/mail/?view=cm&fs=1&to=${lead.gmail}&su=${encodeURIComponent(`Partnership Opportunity - ${lead.companyName}`)}&body=${encodeURIComponent('Hi,\n\nI hope this email finds you well. I would love to discuss a potential partnership opportunity.\n\nBest regards')}`}
                 className="text-gray-500 hover:text-red-500 transition-colors"
                 onClick={(e) => e.stopPropagation()}
                 title={`Gmail ${lead.contactPerson || lead.companyName}`}

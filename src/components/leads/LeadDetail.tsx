@@ -44,7 +44,9 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
 
   const handleEmailClick = () => {
     if (lead.email) {
-      window.open(`mailto:${lead.email}?subject=Partnership Opportunity with ${lead.company}`);
+      const subject = encodeURIComponent(`Partnership Opportunity with ${lead.companyName}`);
+      const body = encodeURIComponent(`Hi,\n\nI hope this email finds you well. I would love to discuss a potential partnership opportunity.\n\nBest regards`);
+      window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${lead.email}&su=${subject}&body=${body}`, '_blank');
     }
   };
 

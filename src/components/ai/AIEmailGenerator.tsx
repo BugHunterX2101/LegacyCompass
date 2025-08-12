@@ -69,7 +69,7 @@ export const AIEmailGenerator: React.FC<AIEmailGeneratorProps> = ({ lead, onEmai
     const body = encodeURIComponent(emailTemplate.body);
     const email = lead.email || lead.gmail || '';
     
-    window.open(`mailto:${email}?subject=${subject}&body=${body}`);
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${subject}&body=${body}`, '_blank');
   };
 
   return (

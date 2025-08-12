@@ -107,7 +107,7 @@ export const VirtualizedLeadTable: React.FC<VirtualizedLeadTableProps> = ({
   const handleEmailClick = useCallback((email: string, leadName: string) => {
     const subject = encodeURIComponent(`Partnership Opportunity - ${leadName}`);
     const body = encodeURIComponent(`Hi,\n\nI hope this email finds you well. I'd love to discuss a potential partnership opportunity.\n\nBest regards`);
-    window.open(`mailto:${email}?subject=${subject}&body=${body}`);
+    window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${subject}&body=${body}`, '_blank');
   }, []);
 
   const getStatusColor = useCallback((status: Lead['status']) => {
