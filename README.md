@@ -63,6 +63,17 @@ npm run dev
 
 4. Open [http://localhost:5173](http://localhost:5173) in your browser.
 
+## 📊 Database Scale
+
+The application now includes **1000+ comprehensive lead records** featuring:
+
+- **Real Company Data**: Fortune 500 companies, startups, and international corporations
+- **Complete Contact Information**: Names, emails, phone numbers, LinkedIn profiles
+- **Diverse Industries**: Technology, Healthcare, Finance, Manufacturing, Retail, Energy, and more
+- **Global Coverage**: Companies from North America, Europe, Asia, and other regions
+- **Rich Metadata**: Revenue data, employee counts, company descriptions, and social media links
+- **Performance Optimized**: Virtual scrolling and intelligent caching for smooth operation
+
 ## 🤖 AI Features
 
 ### AI Lead Scoring

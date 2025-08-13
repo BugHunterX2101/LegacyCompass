@@ -19,10 +19,12 @@ export default defineConfig(({ mode }) => ({
         manualChunks: {
           vendor: ['react', 'react-dom'],
           utils: ['./src/services/aiService', './src/services/performanceService'],
+          data: ['./src/services/realTimeLeadService', './src/data/globalCompanies'],
+          components: ['./src/components/leads/LeadTable', './src/components/performance/VirtualizedLeadTable']
         },
       },
     },
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 2000, // Increased for large dataset
   },
   
   // Development optimizations

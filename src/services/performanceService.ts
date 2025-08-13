@@ -3,14 +3,14 @@ class PerformanceService {
   private cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
   private requestQueue: Array<{ id: string; request: () => Promise<any>; resolve: (value: any) => void; reject: (error: any) => void }> = [];
   private isProcessing = false;
-  private maxConcurrentRequests = 10;
+  private maxConcurrentRequests = 20; // Increased for better throughput
   private currentRequests = 0;
 
   // Debounced function cache
   private debouncedFunctions = new Map<string, (...args: any[]) => void>();
 
   // Memory management
-  private maxCacheSize = 1000;
+  private maxCacheSize = 5000; // Increased cache size for large datasets
   private cleanupInterval: NodeJS.Timeout;
 
   constructor() {

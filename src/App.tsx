@@ -45,6 +45,7 @@ function App() {
     // Subscribe to real-time updates
     const unsubscribe = subscribeToLeadUpdates((updatedLeads) => {
       setLeads(updatedLeads);
+      setFilteredLeads(updatedLeads);
     });
 
     return unsubscribe;
@@ -52,7 +53,7 @@ function App() {
 
   // Update virtualization based on lead count
   useEffect(() => {
-    setUseVirtualization(leads.length > 100);
+    setUseVirtualization(leads.length > 500); // Increase threshold for better performance
   }, [leads.length]);
 
   // Apply search filters

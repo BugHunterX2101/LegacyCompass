@@ -19,13 +19,13 @@ interface VirtualizedLeadTableProps {
 type SortField = keyof Lead;
 type SortDirection = 'asc' | 'desc';
 
-const ITEM_HEIGHT = 80; // Height of each row in pixels
+const ITEM_HEIGHT = 72; // Optimized height for better performance
 
 export const VirtualizedLeadTable: React.FC<VirtualizedLeadTableProps> = ({ 
   leads, 
   onLeadSelect, 
   selectedLeads,
-  containerHeight = 600
+  containerHeight = 800 // Increased for better viewing of large datasets
 }) => {
   const [scrollTop, setScrollTop] = useState(0);
   const [sortField, setSortField] = useState<SortField>('companyName');
