@@ -130,10 +130,16 @@ function App() {
       updatedAt: new Date()
     }));
     
-    setLeads(prevLeads => [...prevLeads, ...newLeads]);
+    setLeads(prevLeads => {
+      // Avoid duplicates by checking existing IDs
+      const existingIds = new Set(prevLeads.map(l => l.id));
+      const uniqueNewLeads = newLeads.filter(lead => !existingIds.has(lead.id));
+      return [...prevLeads, ...uniqueNewLeads];
+    });
+    
     notificationService.success(
       'Scraping Complete',
-      `Successfully scraped ${newLeads.length} new leads`
+      `Successfully scraped ${newLeads.length} new leads from ${scrapedLeads[0]?.source || 'source'}`
     );
     setShowScrapeModal(false);
   };

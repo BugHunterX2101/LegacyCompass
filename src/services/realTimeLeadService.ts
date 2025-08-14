@@ -1800,7 +1800,7 @@ export const enrichLeadWithRealData = async (lead: Lead): Promise<Lead> => {
 };
 
 // Real-time lead scraping simulation
-export const scrapeRealTimeLeads = async (source: string, query: string, maxResults: number): Promise<Lead[]> => {
+export const scrapeRealTimeLeads = async (source: string, query: string = '', maxResults: number = 50): Promise<Lead[]> => {
   // Simulate scraping delay
   await new Promise(resolve => setTimeout(resolve, 3000));
 

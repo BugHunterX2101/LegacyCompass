@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { XMarkIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { LoadingSpinner } from '../common/LoadingSpinner';
-import { scrapeLeadsFromSource } from '../../services/leadService';
+import { scrapeRealTimeLeads } from '../../services/realTimeLeadService';
 
 interface ScrapeModalProps {
   isOpen: boolean;
@@ -78,7 +78,7 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
       }
 
       // Actually scrape the leads
-      const leads = await scrapeLeadsFromSource(selectedSource, searchQuery, maxResults);
+      const leads = await scrapeRealTimeLeads(selectedSource, searchQuery, maxResults);
       
       setProgress(100);
       setCurrentStep('Scraping completed!');
@@ -86,8 +86,6 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       onComplete(leads);
-      onClose();
-      resetModal();
 
     } catch (error) {
       console.error('Scraping failed:', error);
@@ -97,6 +95,14 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
         setProgress(0);
         setCurrentStep('');
       }, 2000);
+    } finally {
+      // Reset modal state after completion or error
+      setTimeout(() => {
+        if (!scraping) {
+          onClose();
+          resetModal();
+        }
+      }, 1500);
     }
   };
 
@@ -138,7 +144,8 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
               <p className="text-gray-400 mb-4">{currentStep}</p>
               <div className="w-full bg-gray-700 rounded-full h-2 mb-4">
                 <div 
-                  className={`bg-blue-600 h-2 rounded-full transition-all duration-300 w-[${progress}%]`}
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
                 />
               </div>
               <p className="text-sm text-gray-500">{progress}% complete</p>

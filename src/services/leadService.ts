@@ -8,7 +8,7 @@ export const generateMockLeads = (count: number): Lead[] => {
 };
 
 // Enhanced scraping with real-time data
-export const scrapeLeadsFromSource = async (source: string, maxResults: number, query: string = ''): Promise<Lead[]> => {
+export const scrapeLeadsFromSource = async (source: string, query: string = '', maxResults: number = 50): Promise<Lead[]> => {
   return await scrapeRealTimeLeads(source, query, maxResults);
 };
 
