@@ -18,13 +18,12 @@ export default defineConfig(({ mode }) => ({
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom'],
-          utils: ['./src/services/aiService', './src/services/performanceService'],
-          data: ['./src/services/realTimeLeadService', './src/data/globalCompanies'],
-          components: ['./src/components/leads/LeadTable', './src/components/performance/VirtualizedLeadTable']
+          heroicons: ['@heroicons/react/24/outline'],
+          lucide: ['lucide-react'],
         },
       },
     },
-    chunkSizeWarningLimit: 2000, // Increased for large dataset
+    chunkSizeWarningLimit: 2000,
   },
   
   // Development optimizations
@@ -35,12 +34,23 @@ export default defineConfig(({ mode }) => ({
   },
   
   optimizeDeps: {
-    exclude: ['lucide-react'],
-    include: ['react', 'react-dom'],
+    include: ['react', 'react-dom', '@heroicons/react/24/outline', 'lucide-react'],
   },
   
   // Enable source maps in development
   css: {
     devSourcemap: mode === 'development',
+  },
+  
+  // Resolve configuration
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
+  
+  // Define global constants
+  define: {
+    __DEV__: mode === 'development',
   },
 }));
