@@ -18,18 +18,18 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
   ];
 
   return (
-    <div className="fixed left-0 top-0 h-full w-64 bg-[#1E2328] border-r border-gray-700 z-40">
+    <div className="fixed left-0 top-0 h-full w-64 bg-[#161B22] border-r border-slate-700/50 z-40">
       {/* Logo */}
-      <div className="p-6 border-b border-gray-700">
+      <div className="p-6 border-b border-slate-700/50">
         <div className="flex items-center">
-          <div className="p-2 bg-gradient-to-br from-[#2563EB] to-[#6366F1] rounded-lg mr-3">
+          <div className="p-2 bg-gradient-to-br from-slate-600 to-blue-600 rounded-lg mr-3">
             <Target className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-white">
+            <h1 className="text-lg font-bold text-slate-100">
               LegacyCompass
             </h1>
-            <p className="text-xs text-gray-400">Lead Intelligence</p>
+            <p className="text-xs text-slate-500">Lead Intelligence</p>
           </div>
         </div>
       </div>
@@ -43,8 +43,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
               onClick={() => onTabChange(tab.id as any)}
               className={`w-full flex items-center px-3 py-2.5 text-sm font-medium rounded-lg transition-all duration-200 ${
                 activeTab === tab.id
-                  ? 'bg-[#2563EB] text-white shadow-lg'
-                  : 'text-gray-300 hover:text-white hover:bg-[#2A2D31]'
+                  ? 'bg-blue-600/90 text-white shadow-lg shadow-blue-900/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-700/40'
               }`}
             >
               <tab.icon className="w-5 h-5 mr-3" />
@@ -55,22 +55,22 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
       </nav>
       
       {/* Bottom section */}
-      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-700">
+      <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-slate-700/50">
         <div className="space-y-2 mb-4">
-          <button className="w-full flex items-center px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-[#2A2D31] rounded-lg transition-colors">
+          <button className="w-full flex items-center px-3 py-2 text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-700/40 rounded-lg transition-colors">
             <Settings className="w-4 h-4 mr-3" />
             Settings
           </button>
-          <button className="w-full flex items-center px-3 py-2 text-sm text-gray-300 hover:text-white hover:bg-[#2A2D31] rounded-lg transition-colors">
+          <button className="w-full flex items-center px-3 py-2 text-sm text-slate-400 hover:text-slate-200 hover:bg-slate-700/40 rounded-lg transition-colors">
             <HelpCircle className="w-4 h-4 mr-3" />
             Help & Support
           </button>
         </div>
         
-        <div className="bg-gradient-to-r from-[#2563EB]/10 to-[#6366F1]/10 rounded-lg p-4 border border-blue-500/20">
-          <h3 className="text-sm font-semibold text-white mb-1">Upgrade to Pro</h3>
-          <p className="text-xs text-gray-400 mb-3">Unlock unlimited leads and advanced features</p>
-          <button className="w-full px-3 py-2 bg-gradient-to-r from-[#2563EB] to-[#6366F1] text-white text-xs font-medium rounded-lg hover:opacity-90 transition-opacity">
+        <div className="bg-gradient-to-r from-blue-600/10 to-indigo-600/10 rounded-lg p-4 border border-blue-500/15">
+          <h3 className="text-sm font-semibold text-slate-200 mb-1">Upgrade to Pro</h3>
+          <p className="text-xs text-slate-500 mb-3">Unlock unlimited leads and advanced features</p>
+          <button className="w-full px-3 py-2 bg-gradient-to-r from-slate-600 to-blue-600 text-white text-xs font-medium rounded-lg hover:from-slate-500 hover:to-blue-500 transition-all">
             Upgrade Now
           </button>
         </div>

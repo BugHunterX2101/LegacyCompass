@@ -24,15 +24,22 @@ export const ScoreCircle: React.FC<ScoreCircleProps> = ({
   };
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'stroke-green-500';
-    if (score >= 60) return 'stroke-yellow-500';
-    return 'stroke-red-500';
+    if (score >= 80) return '#22c55e';
+    if (score >= 60) return '#eab308';
+    return '#ef4444';
   };
 
   const getScoreTextColor = (score: number) => {
     if (score >= 80) return 'text-green-400';
     if (score >= 60) return 'text-yellow-400';
     return 'text-red-400';
+  };
+
+  const getScoreLabel = (score: number) => {
+    if (score >= 90) return 'Hot';
+    if (score >= 80) return 'Warm';
+    if (score >= 60) return 'Cool';
+    return 'Cold';
   };
 
   const circumference = 2 * Math.PI * 20;
@@ -46,22 +53,21 @@ export const ScoreCircle: React.FC<ScoreCircleProps> = ({
             cx="22"
             cy="22"
             r="20"
-            stroke="currentColor"
+            stroke="#374151"
             strokeWidth="4"
             fill="none"
-            className="text-gray-200"
           />
           <circle
             cx="22"
             cy="22"
             r="20"
-            stroke="currentColor"
+            stroke={getScoreColor(score)}
             strokeWidth="4"
             fill="none"
             strokeDasharray={circumference}
             strokeDashoffset={strokeDashoffset}
             strokeLinecap="round"
-            className={`transition-all duration-300 ${getScoreColor(score)}`}
+            className="transition-all duration-500"
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
@@ -71,7 +77,9 @@ export const ScoreCircle: React.FC<ScoreCircleProps> = ({
         </div>
       </div>
       {showLabel && (
-        <span className="text-xs text-gray-600 mt-1">Score</span>
+        <span className={`text-xs mt-1 font-medium ${getScoreTextColor(score)}`}>
+          {getScoreLabel(score)}
+        </span>
       )}
     </div>
   );

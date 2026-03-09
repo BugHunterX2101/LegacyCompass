@@ -104,8 +104,8 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6 w-full max-w-md mx-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6 w-full max-w-md mx-4 animate-scale-in">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-white">Import Leads</h3>
           <button

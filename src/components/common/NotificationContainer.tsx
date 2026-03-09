@@ -49,7 +49,7 @@ export const NotificationContainer: React.FC = () => {
       {notifications.map((notification) => (
         <div
           key={notification.id}
-          className={`${getBackgroundColor(notification.type)} text-white p-4 rounded-lg shadow-lg animate-slideIn`}
+          className={`${getBackgroundColor(notification.type)} text-white p-4 rounded-lg shadow-lg animate-slide-in-right`}
         >
           <div className="flex items-start">
             <div className="flex-shrink-0">

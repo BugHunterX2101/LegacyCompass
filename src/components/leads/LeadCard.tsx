@@ -16,10 +16,10 @@ interface LeadCardProps {
 
 export const LeadCard: React.FC<LeadCardProps> = ({ lead, onSelect, onEnrich, isSelected }) => {
   const getScoreLabel = (score: number) => {
-    if (score >= 90) return { label: 'Hot Lead', color: 'text-red-600' };
-    if (score >= 80) return { label: 'Qualified', color: 'text-green-600' };
-    if (score >= 70) return { label: 'Warm', color: 'text-yellow-600' };
-    return { label: 'Cold', color: 'text-gray-600' };
+    if (score >= 90) return { label: 'Hot Lead', color: 'text-red-400' };
+    if (score >= 80) return { label: 'Warm Lead', color: 'text-green-400' };
+    if (score >= 60) return { label: 'Cool Lead', color: 'text-yellow-400' };
+    return { label: 'Cold Lead', color: 'text-gray-400' };
   };
 
   const scoreLabel = getScoreLabel(lead.score);

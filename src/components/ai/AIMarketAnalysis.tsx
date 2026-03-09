@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { aiService } from '../../services/aiService';
 import { LoadingSpinner } from '../common/LoadingSpinner';
+import { NewsFeed } from '../dashboard/NewsFeed';
 import { 
   ChartBarIcon, 
   ArrowTrendingUpIcon, 
   ExclamationTriangleIcon,
   LightBulbIcon,
-  UserGroupIcon
+  UserGroupIcon,
+  ArrowPathIcon,
+  GlobeAltIcon
 } from '@heroicons/react/24/outline';
 
 interface AIMarketAnalysis {
@@ -15,39 +18,211 @@ interface AIMarketAnalysis {
   marketOpportunities: string[];
   riskFactors: string[];
   recommendations: string[];
+  marketOverview?: {
+    marketSize: string;
+    growthRate: string;
+    sentiment: string;
+  };
 }
 
 interface AIMarketAnalysisProps {
   industry: string;
   location: string;
+  industries?: string[];
+  locations?: string[];
 }
 
-export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({ industry, location }) => {
+// GNews country codes for location-specific news
+const countryCodeMap: Record<string, string> = {
+  'United States': 'us', 'Canada': 'ca', 'Mexico': 'mx',
+  'United Kingdom': 'gb', 'Germany': 'de', 'France': 'fr', 'Italy': 'it', 'Spain': 'es',
+  'Netherlands': 'nl', 'Switzerland': 'ch', 'Sweden': 'se', 'Norway': 'no', 'Denmark': 'dk',
+  'Finland': 'fi', 'Belgium': 'be', 'Austria': 'at', 'Ireland': 'ie', 'Portugal': 'pt',
+  'Poland': 'pl', 'Czech Republic': 'cz', 'Romania': 'ro', 'Greece': 'gr', 'Hungary': 'hu',
+  'Ukraine': 'ua', 'Slovakia': 'sk', 'Slovenia': 'si', 'Croatia': 'hr', 'Serbia': 'rs',
+  'Bulgaria': 'bg', 'Latvia': 'lv', 'Lithuania': 'lt', 'Estonia': 'ee',
+  'China': 'cn', 'Japan': 'jp', 'India': 'in', 'South Korea': 'kr',
+  'Australia': 'au', 'New Zealand': 'nz', 'Singapore': 'sg', 'Hong Kong': 'hk',
+  'Taiwan': 'tw', 'Indonesia': 'id', 'Malaysia': 'my', 'Thailand': 'th',
+  'Vietnam': 'vn', 'Philippines': 'ph', 'Bangladesh': 'bd', 'Pakistan': 'pk',
+  'United Arab Emirates': 'ae', 'Saudi Arabia': 'sa', 'Israel': 'il', 'Qatar': 'qa',
+  'Kuwait': 'kw', 'Turkey': 'tr', 'Iran': 'ir', 'Iraq': 'iq',
+  'South Africa': 'za', 'Nigeria': 'ng', 'Kenya': 'ke', 'Egypt': 'eg', 'Morocco': 'ma',
+  'Ghana': 'gh', 'Ethiopia': 'et', 'Tanzania': 'tz', 'Uganda': 'ug', 'Tunisia': 'tn',
+  'Brazil': 'br', 'Argentina': 'ar', 'Chile': 'cl', 'Colombia': 'co', 'Peru': 'pe',
+  'Venezuela': 've', 'Ecuador': 'ec', 'Uruguay': 'uy',
+  'Costa Rica': 'cr', 'Panama': 'pa', 'Guatemala': 'gt', 'Jamaica': 'jm',
+  'Russia': 'ru', 'Kazakhstan': 'kz', 'Georgia': 'ge',
+};
+
+export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({ 
+  industry: defaultIndustry, 
+  location: defaultLocation,
+  industries = [],
+}) => {
+  // Master list of 50+ industries for comprehensive market analysis
+  const masterIndustries = [
+    'Aerospace & Defense',
+    'Agriculture & Farming',
+    'Artificial Intelligence',
+    'Automotive',
+    'Banking & Financial Services',
+    'Biotechnology',
+    'Blockchain & Cryptocurrency',
+    'Chemical Manufacturing',
+    'Clean Energy & Renewables',
+    'Cloud Computing',
+    'Construction & Engineering',
+    'Consumer Electronics',
+    'Consumer Goods & FMCG',
+    'Cybersecurity',
+    'Data Analytics & Big Data',
+    'E-Commerce & Retail',
+    'Education & EdTech',
+    'Electric Vehicles',
+    'Energy & Utilities',
+    'Entertainment & Media',
+    'Environmental Services',
+    'Fashion & Apparel',
+    'Financial Technology (FinTech)',
+    'Food & Beverage',
+    'Gaming & Esports',
+    'Government & Public Sector',
+    'Healthcare & Life Sciences',
+    'Hospitality & Tourism',
+    'Human Resources & Staffing',
+    'Industrial Automation',
+    'Information Technology',
+    'Insurance & InsurTech',
+    'Internet of Things (IoT)',
+    'Legal & LegalTech',
+    'Logistics & Supply Chain',
+    'Manufacturing',
+    'Marine & Shipping',
+    'Marketing & Advertising',
+    'Medical Devices',
+    'Mining & Metals',
+    'Nanotechnology',
+    'Non-Profit & Social Impact',
+    'Oil & Gas',
+    'Pharmaceuticals',
+    'PropTech & Real Estate',
+    'Quantum Computing',
+    'Robotics & Automation',
+    'SaaS & Enterprise Software',
+    'Semiconductors & Chips',
+    'Space & Satellite Technology',
+    'Sports & Fitness',
+    'Telecommunications',
+    'Transportation & Mobility',
+    'Travel & Aviation',
+    'Venture Capital & Private Equity',
+    'Virtual Reality & AR',
+    'Waste Management & Recycling',
+    'Water & Sanitation',
+    'Wearable Technology',
+  ];
+
+  // Master list of 100+ countries/regions for global market analysis
+  const masterLocations = [
+    // North America
+    'United States', 'Canada', 'Mexico',
+    // Europe
+    'United Kingdom', 'Germany', 'France', 'Italy', 'Spain', 'Netherlands',
+    'Switzerland', 'Sweden', 'Norway', 'Denmark', 'Finland', 'Belgium',
+    'Austria', 'Ireland', 'Portugal', 'Poland', 'Czech Republic', 'Romania',
+    'Greece', 'Hungary', 'Ukraine', 'Luxembourg', 'Iceland', 'Estonia',
+    'Latvia', 'Lithuania', 'Slovakia', 'Slovenia', 'Croatia', 'Serbia',
+    'Bulgaria',
+    // Asia-Pacific
+    'China', 'Japan', 'India', 'South Korea', 'Australia', 'New Zealand',
+    'Singapore', 'Hong Kong', 'Taiwan', 'Indonesia', 'Malaysia', 'Thailand',
+    'Vietnam', 'Philippines', 'Bangladesh', 'Pakistan', 'Sri Lanka',
+    'Myanmar', 'Cambodia', 'Mongolia',
+    // Middle East
+    'United Arab Emirates', 'Saudi Arabia', 'Israel', 'Qatar', 'Kuwait',
+    'Bahrain', 'Oman', 'Jordan', 'Lebanon', 'Turkey', 'Iran', 'Iraq',
+    // Africa
+    'South Africa', 'Nigeria', 'Kenya', 'Egypt', 'Morocco', 'Ghana',
+    'Ethiopia', 'Tanzania', 'Rwanda', 'Uganda', 'Senegal', 'Ivory Coast',
+    'Tunisia', 'Algeria', 'Mozambique', 'Cameroon', 'Zimbabwe',
+    // South America
+    'Brazil', 'Argentina', 'Chile', 'Colombia', 'Peru', 'Venezuela',
+    'Ecuador', 'Uruguay', 'Paraguay', 'Bolivia',
+    // Central America & Caribbean
+    'Costa Rica', 'Panama', 'Guatemala', 'Dominican Republic', 'Jamaica',
+    'Trinidad and Tobago', 'Puerto Rico',
+    // Other
+    'Russia', 'Kazakhstan', 'Uzbekistan', 'Georgia', 'Armenia',
+    'Azerbaijan',
+  ];
+
+  // Merge lead industries with master list, deduplicate and sort
+  const allIndustries = [...new Set([...masterIndustries, ...industries])].sort();
+  // Only use master countries list — no city-level lead locations
+  const allLocations = masterLocations.sort();
+
+  // Resolve default location to a country from the master list
+  const resolvedDefault = allLocations.find(c => defaultLocation.toLowerCase().includes(c.toLowerCase())) 
+    || allLocations.find(c => c === 'United States') 
+    || allLocations[0];
+
   const [analysis, setAnalysis] = useState<AIMarketAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedIndustry, setSelectedIndustry] = useState(defaultIndustry);
+  const [selectedLocation, setSelectedLocation] = useState(resolvedDefault);
 
   useEffect(() => {
     loadMarketAnalysis();
-  }, [industry, location]);
+  }, [selectedIndustry, selectedLocation]);
 
   const loadMarketAnalysis = async () => {
     try {
       setLoading(true);
-      const result = await aiService.analyzeMarket(industry, location);
+      setError(null);
+      const result = await aiService.analyzeMarket(selectedIndustry, selectedLocation);
       setAnalysis(result);
-    } catch (error) {
-      console.error('Market analysis error:', error);
+    } catch (err) {
+      console.error('Market analysis error:', err);
+      setError('Failed to load market analysis. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleRefresh = () => {
+    // Clear cache for this query by forcing a new analysis
+    aiService.clearMarketCache(selectedIndustry, selectedLocation);
+    loadMarketAnalysis();
+  };
+
   if (loading) {
     return (
       <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
-        <div className="flex items-center justify-center py-8">
+        <div className="flex flex-col items-center justify-center py-12">
           <LoadingSpinner size="lg" />
-          <span className="ml-3 text-white">Analyzing market trends...</span>
+          <span className="mt-4 text-white font-medium">Analyzing {selectedIndustry} market...</span>
+          <span className="mt-1 text-sm text-gray-400">Gathering trends, competitors, and opportunities</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
+        <div className="flex flex-col items-center justify-center py-12">
+          <ExclamationTriangleIcon className="h-12 w-12 text-red-400 mb-4" />
+          <p className="text-red-400 font-medium mb-2">Market Analysis Failed</p>
+          <p className="text-sm text-gray-400 mb-4">{error}</p>
+          <button
+            onClick={handleRefresh}
+            className="flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+          >
+            <ArrowPathIcon className="h-4 w-4 mr-2" />
+            Retry Analysis
+          </button>
         </div>
       </div>
     );
@@ -57,15 +232,77 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({ ind
 
   return (
     <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
-      <div className="flex items-center justify-between mb-6">
+      {/* Header with selectors */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4">
         <h3 className="text-lg font-semibold text-white flex items-center">
           <ChartBarIcon className="h-5 w-5 mr-2 text-blue-400" />
           AI Market Analysis
         </h3>
-        <div className="text-sm text-gray-400">
-          {industry} • {location}
+        <div className="flex items-center gap-3 flex-wrap">
+          {/* Industry Selector with search */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-400">Industry:</label>
+            <div className="relative">
+              <select
+                value={selectedIndustry}
+                onChange={(e) => setSelectedIndustry(e.target.value)}
+                className="bg-[#161B22] border border-gray-600 text-white text-sm rounded-md px-2 py-1 pr-7 focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[220px]"
+              >
+                {allIndustries.map(ind => (
+                  <option key={ind} value={ind}>{ind}</option>
+                ))}
+              </select>
+            </div>
+            <span className="text-[10px] text-gray-500">({allIndustries.length} industries)</span>
+          </div>
+          {/* Location Selector */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-400">Location:</label>
+            <select
+              value={selectedLocation}
+              onChange={(e) => setSelectedLocation(e.target.value)}
+              className="bg-[#161B22] border border-gray-600 text-white text-sm rounded-md px-2 py-1 pr-7 focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[220px]"
+            >
+              {allLocations.map(loc => (
+                <option key={loc} value={loc}>{loc}</option>
+              ))}
+            </select>
+            <span className="text-[10px] text-gray-500">({allLocations.length} locations)</span>
+          </div>
+          <button
+            onClick={handleRefresh}
+            className="p-1.5 text-gray-400 hover:text-white hover:bg-gray-700 rounded-md transition-colors"
+            title="Refresh analysis"
+          >
+            <ArrowPathIcon className="h-4 w-4" />
+          </button>
         </div>
       </div>
+
+      {/* Market Overview Summary */}
+      {analysis.marketOverview && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+          <div className="bg-[#161B22] rounded-lg p-4 border border-gray-700 text-center">
+            <GlobeAltIcon className="h-6 w-6 text-blue-400 mx-auto mb-2" />
+            <div className="text-xs text-gray-400 mb-1">Market Size</div>
+            <div className="text-lg font-semibold text-white">{analysis.marketOverview.marketSize}</div>
+          </div>
+          <div className="bg-[#161B22] rounded-lg p-4 border border-gray-700 text-center">
+            <ArrowTrendingUpIcon className="h-6 w-6 text-green-400 mx-auto mb-2" />
+            <div className="text-xs text-gray-400 mb-1">Growth Rate</div>
+            <div className="text-lg font-semibold text-green-400">{analysis.marketOverview.growthRate}</div>
+          </div>
+          <div className="bg-[#161B22] rounded-lg p-4 border border-gray-700 text-center">
+            <ChartBarIcon className="h-6 w-6 text-yellow-400 mx-auto mb-2" />
+            <div className="text-xs text-gray-400 mb-1">Market Sentiment</div>
+            <div className={`text-lg font-semibold ${
+              analysis.marketOverview.sentiment.toLowerCase().includes('bullish') || analysis.marketOverview.sentiment.toLowerCase().includes('positive') ? 'text-green-400' :
+              analysis.marketOverview.sentiment.toLowerCase().includes('bearish') || analysis.marketOverview.sentiment.toLowerCase().includes('negative') ? 'text-red-400' :
+              'text-yellow-400'
+            }`}>{analysis.marketOverview.sentiment}</div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Industry Trends */}
@@ -146,6 +383,16 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({ ind
             </div>
           ))}
         </div>
+      </div>
+
+      {/* Related News Articles */}
+      <div className="mt-6">
+        <NewsFeed 
+          query={selectedIndustry} 
+          title={`${selectedIndustry} News — ${selectedLocation}`} 
+          maxResults={5}
+          country={countryCodeMap[selectedLocation]}
+        />
       </div>
     </div>
   );

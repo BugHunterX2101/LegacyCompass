@@ -19,7 +19,41 @@ dist-ssr
 .DS_Store
 *.suo
 *.ntvs*
-*.njsproj
+*.njsproj*
 *.sln
 *.sw?
+
+# Environment files
 .env
+.env.local
+.env.development
+.env.production
+.env.staging
+.env*.local
+
+# Test coverage
+coverage
+.nyc_output
+
+# Build artifacts
+build
+.cache
+.parcel-cache
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.temp
+.temp/
+.tmp/
+.vercel

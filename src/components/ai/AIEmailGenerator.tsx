@@ -3,7 +3,6 @@ import { Lead } from '../../types';
 import { aiService } from '../../services/aiService';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { 
-  EnvelopeIcon, 
   SparklesIcon, 
   ClipboardDocumentIcon,
   PaperAirplaneIcon

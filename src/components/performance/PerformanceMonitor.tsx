@@ -13,7 +13,7 @@ export const PerformanceMonitor: React.FC = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       const newMetrics = performanceService.getPerformanceMetrics();
-      setMetrics(newMetrics);
+      setMetrics({ ...newMetrics, memoryUsage: newMetrics.memoryUsage ?? 0 });
     }, 5000); // Update every 5 seconds
 
     return () => clearInterval(interval);

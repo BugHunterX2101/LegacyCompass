@@ -3,173 +3,262 @@ import {
   ChartBarIcon, 
   LightBulbIcon, 
   ArrowTrendingUpIcon,
-  ExclamationTriangleIcon,
   CheckCircleIcon,
-  ClockIcon
+  ExclamationTriangleIcon,
+  SparklesIcon,
+  UserGroupIcon,
+  BoltIcon
 } from '@heroicons/react/24/outline';
 import { Lead } from '../../types';
 import { aiService } from '../../services/aiService';
+import { LoadingSpinner } from '../common/LoadingSpinner';
 
 interface AIInsightsPanelProps {
   lead: Lead;
-  onClose: () => void;
 }
 
-export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead, onClose }) => {
+export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead }) => {
   const [insights, setInsights] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const generateInsights = async () => {
       try {
         setLoading(true);
-        const aiInsights = await aiService.generateLeadInsights(lead);
+        setError(null);
+        const aiInsights = await aiService.analyzeLeadWithAI(lead);
         setInsights(aiInsights);
-      } catch (error) {
-        console.error('Failed to generate AI insights:', error);
+      } catch (err) {
+        console.error('Failed to generate AI insights:', err);
+        setError('Failed to generate insights. Please try again.');
       } finally {
         setLoading(false);
       }
     };
 
     generateInsights();
-  }, [lead]);
+  }, [lead.id]);
+
+  const getInsightIcon = (type: string) => {
+    switch (type) {
+      case 'opportunity': return <SparklesIcon className="h-5 w-5 text-green-400" />;
+      case 'risk': return <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />;
+      case 'prediction': return <BoltIcon className="h-5 w-5 text-purple-400" />;
+      default: return <LightBulbIcon className="h-5 w-5 text-yellow-400" />;
+    }
+  };
+
+  const getInsightBgColor = (type: string) => {
+    switch (type) {
+      case 'opportunity': return 'border-green-700/30 bg-green-900/10';
+      case 'risk': return 'border-red-700/30 bg-red-900/10';
+      case 'prediction': return 'border-purple-700/30 bg-purple-900/10';
+      default: return 'border-yellow-700/30 bg-yellow-900/10';
+    }
+  };
+
+  const getScoreColor = (score: number) => {
+    if (score >= 80) return 'text-green-400';
+    if (score >= 60) return 'text-yellow-400';
+    if (score >= 40) return 'text-orange-400';
+    return 'text-red-400';
+  };
 
   if (loading) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-2xl w-full mx-4">
-          <div className="animate-pulse">
-            <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded mb-4"></div>
-            <div className="space-y-3">
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-3/4"></div>
-              <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/2"></div>
-            </div>
-          </div>
+      <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
+        <div className="flex items-center justify-center py-12">
+          <LoadingSpinner size="lg" />
+          <span className="ml-3 text-white">Analyzing {lead.companyName} with AI...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
+        <div className="text-center py-8">
+          <ExclamationTriangleIcon className="h-12 w-12 text-red-400 mx-auto mb-3" />
+          <p className="text-red-400">{error}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
+        <div className="flex justify-between items-center mb-2">
+          <h2 className="text-xl font-bold text-white flex items-center">
             <LightBulbIcon className="h-6 w-6 mr-2 text-yellow-500" />
-            AI Insights for {lead.company}
+            AI Analysis: {lead.companyName}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-          >
-            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+          <span className="text-xs text-gray-500 bg-gray-800 px-3 py-1 rounded-full">
+            Powered by Groq AI
+          </span>
         </div>
+        <p className="text-sm text-gray-400">
+          {lead.industry} &bull; {lead.location} &bull; {lead.employeeCount.toLocaleString()} employees
+          {lead.contactPerson && ` \u2022 ${lead.contactPerson}`}
+          {lead.title && ` (${lead.title})`}
+        </p>
+      </div>
 
-        {insights && (
-          <div className="space-y-6">
-            {/* Lead Score Analysis */}
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-                <ChartBarIcon className="h-5 w-5 mr-2 text-blue-500" />
-                Lead Score Analysis
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                    {insights.leadScore}%
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Overall Score</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    {insights.conversionProbability}%
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Conversion Probability</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                    {insights.timeToClose} days
-                  </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Est. Time to Close</div>
-                </div>
+      {insights && (
+        <>
+          {/* Score Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-5">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-gray-400">Lead Score</p>
+                <ChartBarIcon className="h-5 w-5 text-blue-400" />
+              </div>
+              <div className={`text-3xl font-bold ${getScoreColor(insights.leadScore)}`}>
+                {insights.leadScore}
+              </div>
+              <div className="mt-2 w-full bg-gray-700 rounded-full h-2">
+                <div
+                  className="h-2 rounded-full bg-blue-500 transition-all duration-700"
+                  style={{ width: `${Math.min(insights.leadScore, 100)}%` }}
+                />
               </div>
             </div>
 
-            {/* Key Insights */}
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-                <LightBulbIcon className="h-5 w-5 mr-2 text-yellow-500" />
-                Key Insights
-              </h3>
-              <div className="space-y-3">
-                {insights.keyInsights.map((insight: string, index: number) => (
-                  <div key={index} className="flex items-start">
-                    <CheckCircleIcon className="h-5 w-5 text-green-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700 dark:text-gray-300">{insight}</span>
-                  </div>
-                ))}
+            <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-5">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-gray-400">Conversion Probability</p>
+                <ArrowTrendingUpIcon className="h-5 w-5 text-green-400" />
+              </div>
+              <div className={`text-3xl font-bold ${getScoreColor(insights.predictedConversion)}`}>
+                {insights.predictedConversion}%
+              </div>
+              <div className="mt-2 w-full bg-gray-700 rounded-full h-2">
+                <div
+                  className="h-2 rounded-full bg-green-500 transition-all duration-700"
+                  style={{ width: `${Math.min(insights.predictedConversion, 100)}%` }}
+                />
               </div>
             </div>
 
-            {/* Recommendations */}
-            <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
+            <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-5">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-gray-400">Best Contact Time</p>
+                <BoltIcon className="h-5 w-5 text-purple-400" />
+              </div>
+              <div className="text-lg font-semibold text-purple-300 mt-1">
+                {insights.bestContactTime}
+              </div>
+            </div>
+          </div>
+
+          {/* AI Insights */}
+          <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
+            <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+              <SparklesIcon className="h-5 w-5 mr-2 text-yellow-500" />
+              AI Insights
+            </h3>
+            <div className="space-y-3">
+              {insights.insights && insights.insights.length > 0 ? (
+                insights.insights.map((insight: any, index: number) => (
+                  <div key={index} className={`rounded-lg p-4 border ${getInsightBgColor(insight.type)}`}>
+                    <div className="flex items-start space-x-3">
+                      {getInsightIcon(insight.type)}
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-white">{insight.title}</span>
+                          <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${
+                            insight.type === 'opportunity' ? 'bg-green-900/40 text-green-300' :
+                            insight.type === 'risk' ? 'bg-red-900/40 text-red-300' :
+                            insight.type === 'prediction' ? 'bg-purple-900/40 text-purple-300' :
+                            'bg-yellow-900/40 text-yellow-300'
+                          }`}>
+                            {insight.type || 'insight'}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-400 mt-1">{insight.description}</p>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-400 text-sm">No specific insights available.</p>
+              )}
+            </div>
+          </div>
+
+          {/* Recommendations & Approach */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {/* Recommended Approach */}
+            <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
                 <ArrowTrendingUpIcon className="h-5 w-5 mr-2 text-green-500" />
-                Recommendations
+                Recommended Approach
               </h3>
-              <div className="space-y-3">
-                {insights.recommendations.map((recommendation: string, index: number) => (
-                  <div key={index} className="flex items-start">
-                    <ArrowTrendingUpIcon className="h-5 w-5 text-blue-500 mr-2 mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-700 dark:text-gray-300">{recommendation}</span>
-                  </div>
-                ))}
-              </div>
+              <p className="text-gray-300 text-sm leading-relaxed">{insights.recommendedApproach}</p>
             </div>
 
-            {/* Risk Factors */}
-            {insights.riskFactors && insights.riskFactors.length > 0 && (
-              <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-                  <ExclamationTriangleIcon className="h-5 w-5 mr-2 text-red-500" />
-                  Risk Factors
+            {/* Action Items */}
+            <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
+              <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                <CheckCircleIcon className="h-5 w-5 mr-2 text-blue-500" />
+                Key Recommendations
+              </h3>
+              <div className="space-y-2">
+                {insights.recommendations && insights.recommendations.length > 0 ? (
+                  insights.recommendations.map((rec: string, index: number) => (
+                    <div key={index} className="flex items-start space-x-2">
+                      <span className="text-blue-400 text-sm font-bold mt-0.5">{index + 1}.</span>
+                      <p className="text-sm text-gray-300">{rec}</p>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-gray-400 text-sm">No specific recommendations yet.</p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Competitor & Market */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {insights.competitorAnalysis && insights.competitorAnalysis.length > 0 && (
+              <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                  <UserGroupIcon className="h-5 w-5 mr-2 text-orange-400" />
+                  Competitive Landscape
                 </h3>
-                <div className="space-y-3">
-                  {insights.riskFactors.map((risk: string, index: number) => (
-                    <div key={index} className="flex items-start">
-                      <ExclamationTriangleIcon className="h-5 w-5 text-red-500 mr-2 mt-0.5 flex-shrink-0" />
-                      <span className="text-gray-700 dark:text-gray-300">{risk}</span>
+                <div className="space-y-2">
+                  {insights.competitorAnalysis.map((item: string, index: number) => (
+                    <div key={index} className="flex items-start space-x-2">
+                      <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 flex-shrink-0" />
+                      <p className="text-sm text-gray-300">{item}</p>
                     </div>
                   ))}
                 </div>
               </div>
             )}
 
-            {/* Next Steps */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3 flex items-center">
-                <ClockIcon className="h-5 w-5 mr-2 text-blue-500" />
-                Suggested Next Steps
-              </h3>
-              <div className="space-y-3">
-                {insights.nextSteps.map((step: string, index: number) => (
-                  <div key={index} className="flex items-start">
-                    <div className="bg-blue-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm font-bold mr-3 mt-0.5 flex-shrink-0">
-                      {index + 1}
+            {insights.marketTrends && insights.marketTrends.length > 0 && (
+              <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
+                <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
+                  <ArrowTrendingUpIcon className="h-5 w-5 mr-2 text-cyan-400" />
+                  Market Trends
+                </h3>
+                <div className="space-y-2">
+                  {insights.marketTrends.map((trend: string, index: number) => (
+                    <div key={index} className="flex items-start space-x-2">
+                      <div className="w-2 h-2 bg-cyan-400 rounded-full mt-2 flex-shrink-0" />
+                      <p className="text-sm text-gray-300">{trend}</p>
                     </div>
-                    <span className="text-gray-700 dark:text-gray-300">{step}</span>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
           </div>
-        )}
-      </div>
+        </>
+      )}
     </div>
   );
 };

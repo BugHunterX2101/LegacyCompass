@@ -1,4 +1,8 @@
 import { Lead } from '../types';
+import { analyzeLeadWithRealAI, generateEmailWithRealAI, analyzeMarketWithRealAI, analyzeConversationWithRealAI, enrichLeadWithRealAI, predictLeadOutcomeWithRealAI } from './realAIService';
+
+// Always try real AI first (calls go through /api/ai proxy), fall back to mock on error
+const USE_REAL_AI = true;
 
 interface AIInsight {
   type: 'opportunity' | 'risk' | 'recommendation' | 'prediction';
@@ -56,6 +60,11 @@ interface AIMarketAnalysis {
   marketOpportunities: string[];
   riskFactors: string[];
   recommendations: string[];
+  marketOverview?: {
+    marketSize: string;
+    growthRate: string;
+    sentiment: string;
+  };
 }
 
 class AIService {
@@ -63,7 +72,7 @@ class AIService {
   private requestQueue: Array<() => Promise<any>> = [];
   private isProcessing = false;
 
-  // AI Lead Scoring with advanced algorithms
+  // AI Lead Scoring with real or mock AI
   async analyzeLeadWithAI(lead: Lead): Promise<AIAnalysis> {
     const cacheKey = `analysis_${lead.id}_${lead.updatedAt.getTime()}`;
     
@@ -71,10 +80,60 @@ class AIService {
       return this.cache.get(cacheKey);
     }
 
-    // Simulate AI processing delay
-    await this.delay(800);
+    let analysis: AIAnalysis;
 
-    const analysis: AIAnalysis = {
+    if (USE_REAL_AI) {
+      try {
+        const realAnalysis = await analyzeLeadWithRealAI(lead);
+        
+        // Handle structured insights from AI (objects with title+description) or plain strings
+        const structuredInsights = Array.isArray(realAnalysis.insights) 
+          ? realAnalysis.insights.map((item: any) => {
+              if (typeof item === 'object' && item.title && item.description) {
+                return {
+                  type: item.type || 'recommendation',
+                  title: item.title,
+                  description: item.description,
+                  confidence: 85,
+                  priority: 'medium' as const,
+                  actionable: true
+                };
+              }
+              // Fallback for plain string insights
+              return {
+                type: 'recommendation' as const,
+                title: 'AI Insight',
+                description: typeof item === 'string' ? item : JSON.stringify(item),
+                confidence: 85,
+                priority: 'medium' as const,
+                actionable: true
+              };
+            })
+          : this.generateAIInsights(lead);
+
+        analysis = {
+          leadScore: realAnalysis.leadScore || this.calculateAdvancedLeadScore(lead),
+          insights: structuredInsights.length > 0 ? structuredInsights : this.generateAIInsights(lead),
+          predictedConversion: realAnalysis.conversionProbability || this.predictConversionProbability(lead),
+          bestContactTime: realAnalysis.bestContactTime || this.predictBestContactTime(lead),
+          recommendedApproach: realAnalysis.recommendedApproach || this.recommendContactApproach(lead),
+          competitorAnalysis: realAnalysis.competitorAnalysis || this.analyzeCompetitors(lead),
+          marketTrends: realAnalysis.marketTrends || this.analyzeMarketTrends(lead)
+        };
+      } catch (error) {
+        console.error('Real AI failed, using mock:', error);
+        analysis = this.getMockAnalysis(lead);
+      }
+    } else {
+      analysis = this.getMockAnalysis(lead);
+    }
+
+    this.cache.set(cacheKey, analysis);
+    return analysis;
+  }
+
+  private getMockAnalysis(lead: Lead): AIAnalysis {
+    return {
       leadScore: this.calculateAdvancedLeadScore(lead),
       insights: this.generateAIInsights(lead),
       predictedConversion: this.predictConversionProbability(lead),
@@ -83,9 +142,6 @@ class AIService {
       competitorAnalysis: this.analyzeCompetitors(lead),
       marketTrends: this.analyzeMarketTrends(lead)
     };
-
-    this.cache.set(cacheKey, analysis);
-    return analysis;
   }
 
   // AI-powered lead enrichment
@@ -96,9 +152,47 @@ class AIService {
       return this.cache.get(cacheKey);
     }
 
-    await this.delay(1200);
+    let enrichment: AIEnrichmentResult;
 
-    const enrichment: AIEnrichmentResult = {
+    if (USE_REAL_AI) {
+      try {
+        const realData = await enrichLeadWithRealAI(lead);
+        enrichment = {
+          contactInfo: {
+            email: lead.email || this.generateProfessionalEmail(lead.companyName, lead.contactPerson),
+            phone: lead.phone || this.generatePhoneNumber(lead.location),
+            linkedin: lead.linkedinProfile || this.generateLinkedInProfile(lead.contactPerson),
+            twitter: this.generateTwitterHandle(lead.companyName)
+          },
+          companyInfo: {
+            description: realData.companyDescription || this.generateCompanyDescription(lead),
+            technologies: realData.technologies || this.predictTechnologies(lead),
+            competitors: realData.competitors || this.identifyCompetitors(lead),
+            fundingStage: realData.fundingStage || this.predictFundingStage(lead),
+            recentNews: realData.recentNews || this.generateRecentNews(lead)
+          },
+          personInfo: {
+            role: lead.title || realData.predictedRole || this.predictRole(lead),
+            experience: realData.experience || this.predictExperience(lead),
+            education: this.predictEducation(lead),
+            interests: realData.interests || this.predictInterests(lead)
+          },
+          confidence: 85
+        };
+      } catch (error) {
+        console.error('Real AI enrichment failed, using mock:', error);
+        enrichment = this.getMockEnrichment(lead);
+      }
+    } else {
+      enrichment = this.getMockEnrichment(lead);
+    }
+
+    this.cache.set(cacheKey, enrichment);
+    return enrichment;
+  }
+
+  private getMockEnrichment(lead: Lead): AIEnrichmentResult {
+    return {
       contactInfo: {
         email: lead.email || this.generateProfessionalEmail(lead.companyName, lead.contactPerson),
         phone: lead.phone || this.generatePhoneNumber(lead.location),
@@ -118,17 +212,27 @@ class AIService {
         education: this.predictEducation(lead),
         interests: this.predictInterests(lead)
       },
-      confidence: Math.random() * 30 + 70 // 70-100% confidence
+      confidence: Math.random() * 30 + 70
     };
-
-    this.cache.set(cacheKey, enrichment);
-    return enrichment;
   }
 
-  // AI Email Generation
+  // AI Email Generation with real or mock AI
   async generatePersonalizedEmail(lead: Lead, purpose: string): Promise<AIEmailTemplate> {
-    await this.delay(600);
+    if (USE_REAL_AI) {
+      try {
+        const realEmail = await generateEmailWithRealAI(lead, purpose);
+        return {
+          subject: realEmail.subject,
+          body: realEmail.body,
+          tone: realEmail.tone || 'professional',
+          personalization: realEmail.personalization || this.getPersonalizationPoints(lead)
+        };
+      } catch (error) {
+        console.error('Real AI failed, using mock:', error);
+      }
+    }
 
+    await this.delay(600);
     const templates = this.getEmailTemplates(purpose);
     const selectedTemplate = templates[Math.floor(Math.random() * templates.length)];
 
@@ -148,18 +252,45 @@ class AIService {
       return this.cache.get(cacheKey);
     }
 
-    await this.delay(1000);
+    let analysis: AIMarketAnalysis;
 
-    const analysis: AIMarketAnalysis = {
-      industryTrends: this.generateIndustryTrends(industry),
-      competitorInsights: this.generateCompetitorInsights(industry),
-      marketOpportunities: this.identifyMarketOpportunities(industry, location),
-      riskFactors: this.identifyRiskFactors(industry),
-      recommendations: this.generateMarketRecommendations(industry, location)
-    };
+    if (USE_REAL_AI) {
+      try {
+        const realAnalysis = await analyzeMarketWithRealAI(industry, location);
+        analysis = {
+          marketOverview: realAnalysis.marketOverview || undefined,
+          industryTrends: realAnalysis.industryTrends || this.generateIndustryTrends(industry),
+          competitorInsights: realAnalysis.competitorInsights || this.generateCompetitorInsights(industry),
+          marketOpportunities: realAnalysis.marketOpportunities || this.identifyMarketOpportunities(industry, location),
+          riskFactors: realAnalysis.riskFactors || this.identifyRiskFactors(industry),
+          recommendations: realAnalysis.recommendations || this.generateMarketRecommendations(industry, location)
+        };
+      } catch (error) {
+        console.error('Real AI market analysis failed, using mock:', error);
+        analysis = {
+          industryTrends: this.generateIndustryTrends(industry),
+          competitorInsights: this.generateCompetitorInsights(industry),
+          marketOpportunities: this.identifyMarketOpportunities(industry, location),
+          riskFactors: this.identifyRiskFactors(industry),
+          recommendations: this.generateMarketRecommendations(industry, location)
+        };
+      }
+    } else {
+      analysis = {
+        industryTrends: this.generateIndustryTrends(industry),
+        competitorInsights: this.generateCompetitorInsights(industry),
+        marketOpportunities: this.identifyMarketOpportunities(industry, location),
+        riskFactors: this.identifyRiskFactors(industry),
+        recommendations: this.generateMarketRecommendations(industry, location)
+      };
+    }
 
     this.cache.set(cacheKey, analysis);
     return analysis;
+  }
+
+  clearMarketCache(industry: string, location: string) {
+    this.cache.delete(`market_${industry}_${location}`);
   }
 
   // AI Conversation Intelligence
@@ -170,13 +301,27 @@ class AIService {
     urgency: 'high' | 'medium' | 'low';
     topics: string[];
   }> {
-    await this.delay(400);
+    if (USE_REAL_AI) {
+      try {
+        const realResult = await analyzeConversationWithRealAI(messages);
+        return {
+          sentiment: realResult.sentiment || 'neutral',
+          intent: realResult.intent || this.analyzeIntent(messages),
+          nextBestAction: realResult.nextBestAction || this.recommendNextAction(messages),
+          urgency: realResult.urgency || 'medium',
+          topics: realResult.topics || this.extractTopics(messages)
+        };
+      } catch (error) {
+        console.error('Real AI conversation analysis failed, using mock:', error);
+      }
+    }
 
+    await this.delay(400);
     return {
-      sentiment: ['positive', 'neutral', 'negative'][Math.floor(Math.random() * 3)] as any,
+      sentiment: ['positive', 'neutral', 'negative'][Math.floor(Math.random() * 3)] as 'positive' | 'neutral' | 'negative',
       intent: this.analyzeIntent(messages),
       nextBestAction: this.recommendNextAction(messages),
-      urgency: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)] as any,
+      urgency: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)] as 'high' | 'medium' | 'low',
       topics: this.extractTopics(messages)
     };
   }
@@ -203,10 +348,24 @@ class AIService {
     riskFactors: string[];
     successFactors: string[];
   }> {
-    await this.delay(500);
+    if (USE_REAL_AI) {
+      try {
+        const realPrediction = await predictLeadOutcomeWithRealAI(lead);
+        return {
+          conversionProbability: realPrediction.conversionProbability ?? (Math.random() * 40 + 60),
+          timeToConversion: realPrediction.timeToConversion || this.predictTimeToConversion(lead),
+          valueEstimate: realPrediction.valueEstimate || this.estimateLeadValue(lead),
+          riskFactors: realPrediction.riskFactors || this.identifyLeadRisks(lead),
+          successFactors: realPrediction.successFactors || this.identifySuccessFactors(lead)
+        };
+      } catch (error) {
+        console.error('Real AI prediction failed, using mock:', error);
+      }
+    }
 
+    await this.delay(500);
     return {
-      conversionProbability: Math.random() * 40 + 60, // 60-100%
+      conversionProbability: Math.random() * 40 + 60,
       timeToConversion: this.predictTimeToConversion(lead),
       valueEstimate: this.estimateLeadValue(lead),
       riskFactors: this.identifyLeadRisks(lead),
@@ -461,22 +620,22 @@ class AIService {
     ];
   }
 
-  private predictRole(lead: Lead): string {
+  private predictRole(_lead: Lead): string {
     const roles = ['VP of Technology', 'Director of Operations', 'Chief Innovation Officer', 'Head of Digital'];
     return roles[Math.floor(Math.random() * roles.length)];
   }
 
-  private predictExperience(lead: Lead): string {
+  private predictExperience(_lead: Lead): string {
     const experience = ['10+ years in technology leadership', '15+ years in industry', '8+ years in current role'];
     return experience[Math.floor(Math.random() * experience.length)];
   }
 
-  private predictEducation(lead: Lead): string {
+  private predictEducation(_lead: Lead): string {
     const education = ['MBA from top-tier university', 'Engineering degree', 'Business Administration'];
     return education[Math.floor(Math.random() * education.length)];
   }
 
-  private predictInterests(lead: Lead): string[] {
+  private predictInterests(_lead: Lead): string[] {
     return ['Innovation', 'Digital Transformation', 'Team Leadership', 'Industry Trends'];
   }
 
@@ -529,7 +688,7 @@ class AIService {
     return this.analyzeMarketTrends({ industry } as Lead);
   }
 
-  private generateCompetitorInsights(industry: string): string[] {
+  private generateCompetitorInsights(_industry: string): string[] {
     return [
       'Market consolidation creating opportunities',
       'New entrants disrupting traditional models',
@@ -545,7 +704,7 @@ class AIService {
     ];
   }
 
-  private identifyRiskFactors(industry: string): string[] {
+  private identifyRiskFactors(_industry: string): string[] {
     return [
       'Economic uncertainty affecting budgets',
       'Regulatory changes impacting industry',
@@ -561,12 +720,12 @@ class AIService {
     ];
   }
 
-  private analyzeIntent(messages: string[]): string {
+  private analyzeIntent(_messages: string[]): string {
     const intents = ['Purchase Intent', 'Information Gathering', 'Comparison Shopping', 'Support Request'];
     return intents[Math.floor(Math.random() * intents.length)];
   }
 
-  private recommendNextAction(messages: string[]): string {
+  private recommendNextAction(_messages: string[]): string {
     const actions = [
       'Schedule product demo',
       'Send detailed proposal',
@@ -576,7 +735,7 @@ class AIService {
     return actions[Math.floor(Math.random() * actions.length)];
   }
 
-  private extractTopics(messages: string[]): string[] {
+  private extractTopics(_messages: string[]): string[] {
     return ['Pricing', 'Features', 'Implementation', 'Support'];
   }
 
@@ -636,7 +795,7 @@ class AIService {
   }
 
   // Queue management for high traffic
-  private async processQueue(): Promise<void> {
+  async processQueue(): Promise<void> {
     if (this.isProcessing || this.requestQueue.length === 0) return;
     
     this.isProcessing = true;

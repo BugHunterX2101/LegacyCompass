@@ -73,8 +73,8 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
                 <ScoreCircle score={lead.score} size="lg" />
               </div>
               <div>
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{lead.company}</h2>
-                <p className="text-lg text-gray-600 dark:text-gray-400">{lead.name}</p>
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">{lead.companyName}</h2>
+                <p className="text-lg text-gray-600 dark:text-gray-400">{lead.contactPerson}</p>
                 <p className="text-sm text-gray-500 dark:text-gray-500">{lead.title}</p>
                 <div className="mt-2">
                   <StatusBadge status={status} />
@@ -166,11 +166,11 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
                     </div>
                   )}
                   
-                  {lead.employees && (
+                  {lead.employeeCount && (
                     <div className="flex items-center space-x-3">
                       <UserIcon className="h-5 w-5 text-gray-400" />
                       <span className="text-gray-700 dark:text-gray-300">
-                        {lead.employees} employees
+                        {lead.employeeCount} employees
                       </span>
                     </div>
                   )}
@@ -178,7 +178,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
                   <div className="flex items-center space-x-3">
                     <CalendarIcon className="h-5 w-5 text-gray-400" />
                     <span className="text-gray-700 dark:text-gray-300">
-                      Added {new Date(lead.dateAdded).toLocaleDateString()}
+                      Added {new Date(lead.createdAt).toLocaleDateString()}
                     </span>
                   </div>
                 </div>
@@ -189,7 +189,7 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
             <div className="space-y-4">
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Status</h3>
               <div className="flex space-x-2">
-                {(['new', 'contacted', 'qualified', 'proposal', 'closed'] as const).map((statusOption) => (
+                {(['new', 'contacted', 'qualified', 'converted', 'rejected'] as const).map((statusOption) => (
                   <button
                     key={statusOption}
                     onClick={() => handleStatusChange(statusOption)}
@@ -262,7 +262,6 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
       {showAIInsights && (
         <AIInsightsPanel
           lead={lead}
-          onClose={() => setShowAIInsights(false)}
         />
       )}
 
@@ -270,7 +269,6 @@ export const LeadDetail: React.FC<LeadDetailProps> = ({ lead, onClose, onUpdate 
       {showEmailGenerator && (
         <AIEmailGenerator
           lead={lead}
-          onClose={() => setShowEmailGenerator(false)}
         />
       )}
     </>

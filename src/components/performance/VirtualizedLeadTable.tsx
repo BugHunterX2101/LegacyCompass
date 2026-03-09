@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import { Lead } from '../../types';
 import { performanceService } from '../../services/performanceService';
 import { ScoreCircle } from '../common/ScoreCircle';
@@ -201,7 +201,7 @@ export const VirtualizedLeadTable: React.FC<VirtualizedLeadTableProps> = ({
         
         {/* Visible items */}
         <div>
-          {visibleLeads.map((lead, index) => (
+          {visibleLeads.map((lead) => (
             <div 
               key={lead.id}
               className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-700 hover:bg-[#262C36] transition-colors"

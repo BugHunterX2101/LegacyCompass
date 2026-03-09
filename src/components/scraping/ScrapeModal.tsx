@@ -3,10 +3,14 @@ import {
   XMarkIcon,
   MagnifyingGlassIcon,
   ExclamationTriangleIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  BriefcaseIcon,
+  RocketLaunchIcon,
+  PhoneIcon,
+  GlobeAltIcon
 } from '@heroicons/react/24/outline';
 import { LoadingSpinner } from '../common/LoadingSpinner';
-import { scrapeRealTimeLeads } from '../../services/realTimeLeadService';
+import { scrapeLeadsFromNews } from '../../services/scrapingService';
 
 interface ScrapeModalProps {
   isOpen: boolean;
@@ -15,9 +19,9 @@ interface ScrapeModalProps {
 }
 
 export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onComplete }) => {
-  const [selectedSource, setSelectedSource] = useState('linkedin');
+  const [selectedSource, setSelectedSource] = useState('business');
   const [searchQuery, setSearchQuery] = useState('');
-  const [maxResults, setMaxResults] = useState(50);
+  const [maxResults, setMaxResults] = useState(10);
   const [scraping, setScraping] = useState(false);
   const [progress, setProgress] = useState(0);
   const [currentStep, setCurrentStep] = useState('');
@@ -27,41 +31,41 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
 
   const sources = [
     {
-      id: 'linkedin',
-      name: 'LinkedIn Sales Navigator',
-      icon: '💼',
-      description: 'Professional network with detailed company and contact information',
-      estimatedTime: '2-5 minutes'
+      id: 'business',
+      name: 'Business News',
+      Icon: BriefcaseIcon,
+      description: 'Discover companies from real-time business news and press releases',
+      estimatedTime: '10-30 seconds'
     },
     {
-      id: 'crunchbase',
-      name: 'Crunchbase',
-      icon: '🚀',
-      description: 'Startup and company database with funding information',
-      estimatedTime: '1-3 minutes'
+      id: 'funding',
+      name: 'Startup & Funding',
+      Icon: RocketLaunchIcon,
+      description: 'Find startups from funding announcements and venture capital news',
+      estimatedTime: '10-30 seconds'
     },
     {
-      id: 'yellowpages',
-      name: 'Yellow Pages',
-      icon: '📞',
-      description: 'Business directory with contact information',
-      estimatedTime: '1-2 minutes'
+      id: 'industry',
+      name: 'Industry Reports',
+      Icon: PhoneIcon,
+      description: 'Extract companies from industry analysis and market reports',
+      estimatedTime: '10-30 seconds'
     },
     {
-      id: 'google',
-      name: 'Google Business',
-      icon: '🌐',
-      description: 'Google My Business listings and company information',
-      estimatedTime: '2-4 minutes'
+      id: 'global',
+      name: 'Global Markets',
+      Icon: GlobeAltIcon,
+      description: 'Find companies from international business and trade news',
+      estimatedTime: '10-30 seconds'
     }
   ];
 
   const searchExamples = [
-    'Technology companies in San Francisco',
-    'Healthcare startups in Boston',
-    'Manufacturing companies with 100+ employees',
-    'SaaS companies in New York',
-    'E-commerce businesses in Los Angeles'
+    'AI startups',
+    'Healthcare technology',
+    'Fintech funding',
+    'SaaS companies',
+    'Electric vehicle manufacturers'
   ];
 
   const handleScrape = async () => {
@@ -75,34 +79,24 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
     setError(null);
 
     try {
-      // Simulate scraping progress
-      setCurrentStep('Initializing scraper...');
-      setProgress(10);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      const scrapedLeads = await scrapeLeadsFromNews(
+        selectedSource,
+        searchQuery,
+        maxResults,
+        (step, percent) => {
+          setCurrentStep(step);
+          setProgress(percent);
+        }
+      );
 
-      setCurrentStep('Searching for leads...');
-      setProgress(30);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      setCurrentStep('Extracting contact information...');
-      setProgress(60);
-      await new Promise(resolve => setTimeout(resolve, 1500));
-
-      setCurrentStep('Validating and enriching data...');
-      setProgress(80);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      // Perform actual scraping
-      const scrapedLeads = await scrapeRealTimeLeads(selectedSource, searchQuery, maxResults);
-
-      setCurrentStep('Finalizing results...');
+      setCurrentStep('Done!');
       setProgress(100);
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 400));
 
       onComplete(scrapedLeads);
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Scraping failed');
+      setError(err instanceof Error ? err.message : 'Scraping failed. Try a different query.');
     } finally {
       setScraping(false);
       setProgress(0);
@@ -111,8 +105,8 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
+      <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6 w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto animate-scale-in">
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-semibold text-white">Lead Scraper</h3>
           <button
@@ -143,7 +137,7 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
                     }`}
                   >
                     <div className="flex items-center space-x-3 mb-2">
-                      <span className="text-2xl">{source.icon}</span>
+                      <source.Icon className="h-6 w-6 text-gray-300" />
                       <div>
                         <h4 className="font-medium text-white">{source.name}</h4>
                         <p className="text-xs text-gray-400">{source.estimatedTime}</p>
@@ -197,10 +191,14 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
                 onChange={(e) => setMaxResults(Number(e.target.value))}
                 className="w-full px-3 py-2 bg-[#0D1117] border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
+                <option value={5}>5 leads</option>
+                <option value={10}>10 leads</option>
+                <option value={15}>15 leads</option>
+                <option value={20}>20 leads</option>
                 <option value={25}>25 leads</option>
+                <option value={30}>30 leads</option>
+                <option value={40}>40 leads</option>
                 <option value={50}>50 leads</option>
-                <option value={100}>100 leads</option>
-                <option value={200}>200 leads</option>
               </select>
             </div>
 

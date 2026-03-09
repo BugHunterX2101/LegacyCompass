@@ -12,17 +12,25 @@ import {
 
 interface EnrichmentPanelProps {
   leads: Lead[];
-  onEnrich: (leadId: string) => void;
+  onEnrich: (leadId: string, enrichedLead: Lead) => void;
 }
 
 interface EnrichmentStatus {
   [leadId: string]: 'idle' | 'enriching' | 'success' | 'error';
 }
 
+interface EnrichmentResult {
+  leadId: string;
+  companyName: string;
+  fieldsEnriched: string[];
+  enrichedLead: Lead;
+}
+
 export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnrich }) => {
   const [enrichmentStatus, setEnrichmentStatus] = useState<EnrichmentStatus>({});
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [bulkEnriching, setBulkEnriching] = useState(false);
+  const [enrichmentResults, setEnrichmentResults] = useState<EnrichmentResult[]>([]);
 
   const getEnrichmentScore = (lead: Lead): number => {
     let score = 0;
@@ -60,22 +68,38 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
       const lead = leads.find(l => l.id === leadId);
       if (!lead) throw new Error('Lead not found');
       
-      await enrichLeadWithRealData(lead);
-      setEnrichmentStatus(prev => ({ ...prev, [leadId]: 'success' }));
-      onEnrich(leadId);
+      const enrichedLead = await enrichLeadWithRealData(lead);
       
-      // Reset status after 3 seconds
-      setTimeout(() => {
-        setEnrichmentStatus(prev => ({ ...prev, [leadId]: 'idle' }));
-      }, 3000);
+      // Track which fields were enriched
+      const fieldsEnriched: string[] = [];
+      if (!lead.contactPerson && enrichedLead.contactPerson) fieldsEnriched.push(`Contact: ${enrichedLead.contactPerson}`);
+      if (!lead.title && enrichedLead.title) fieldsEnriched.push(`Title: ${enrichedLead.title}`);
+      if (!lead.email && enrichedLead.email) fieldsEnriched.push(`Email: ${enrichedLead.email}`);
+      if (!lead.phone && enrichedLead.phone) fieldsEnriched.push(`Phone: ${enrichedLead.phone}`);
+      if (!lead.website && enrichedLead.website) fieldsEnriched.push(`Website: ${enrichedLead.website}`);
+      if (!lead.socialMedia?.linkedin && enrichedLead.socialMedia?.linkedin) fieldsEnriched.push(`LinkedIn: ${enrichedLead.socialMedia.linkedin}`);
+      if (!lead.socialMedia?.twitter && enrichedLead.socialMedia?.twitter) fieldsEnriched.push(`Twitter: ${enrichedLead.socialMedia.twitter}`);
+      if (!lead.description && enrichedLead.description) fieldsEnriched.push('Description added');
+      if ((!lead.revenue || lead.revenue === 0) && enrichedLead.revenue && enrichedLead.revenue > 0) fieldsEnriched.push(`Revenue: $${enrichedLead.revenue.toLocaleString()}`);
+      if ((!lead.employeeCount || lead.employeeCount <= 1) && enrichedLead.employeeCount && enrichedLead.employeeCount > 1) fieldsEnriched.push(`Employees: ${enrichedLead.employeeCount.toLocaleString()}`);
+
+      // Store enrichment result for display
+      setEnrichmentResults(prev => [
+        { leadId, companyName: lead.companyName, fieldsEnriched, enrichedLead },
+        ...prev.filter(r => r.leadId !== leadId)
+      ]);
+
+      setEnrichmentStatus(prev => ({ ...prev, [leadId]: 'success' }));
+      onEnrich(leadId, enrichedLead);
       
     } catch (error) {
+      console.error('[Enrichment] Error enriching lead:', error);
       setEnrichmentStatus(prev => ({ ...prev, [leadId]: 'error' }));
       
-      // Reset status after 3 seconds
+      // Reset status after 5 seconds
       setTimeout(() => {
         setEnrichmentStatus(prev => ({ ...prev, [leadId]: 'idle' }));
-      }, 3000);
+      }, 5000);
     }
   };
 
@@ -193,6 +217,39 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
           </div>
         </div>
       </div>
+
+      {/* Enrichment Results */}
+      {enrichmentResults.length > 0 && (
+        <div className="mb-6">
+          <h4 className="text-sm font-medium text-green-400 mb-3 flex items-center space-x-2">
+            <CheckCircleIcon className="h-4 w-4" />
+            <span>Recently Enriched ({enrichmentResults.length})</span>
+          </h4>
+          <div className="space-y-3">
+            {enrichmentResults.map((result) => (
+              <div key={result.leadId} className="bg-green-900/20 border border-green-700/30 rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h5 className="font-medium text-white">{result.companyName}</h5>
+                  <span className="text-xs text-green-400 bg-green-900/40 px-2 py-1 rounded">
+                    {result.fieldsEnriched.length} fields enriched
+                  </span>
+                </div>
+                {result.fieldsEnriched.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {result.fieldsEnriched.map((field, idx) => (
+                      <span key={idx} className="text-xs bg-green-800/30 text-green-300 px-2 py-1 rounded">
+                        {field}
+                      </span>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-yellow-400">No new data found — all fields may already be filled or unverifiable</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Bulk Actions */}
       {incompleteLeads.length > 0 && (

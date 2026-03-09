@@ -1,251 +1,41 @@
 import { Lead } from '../types';
-import { getAllGlobalCompanies, getCompaniesByCountry } from '../data/globalCompanies';
+import { scrapeLeadsWithRealAI, enrichLeadWithRealAIData } from './realAIService';
 
-// Enhanced real-time lead service with 1000+ leads
+const USE_REAL_AI = true;
+const STORAGE_KEY = 'legacycompass_leads';
+
+// Real-time lead service with localStorage persistence
 class RealTimeLeadService {
   private leads: Lead[] = [];
   private listeners: ((leads: Lead[]) => void)[] = [];
-  private updateInterval: NodeJS.Timeout | null = null;
 
   constructor() {
-    this.initializeLeads();
-    this.startRealTimeUpdates();
+    this.loadFromLocalStorage();
   }
 
-  private initializeLeads() {
-    this.leads = this.generateComprehensiveLeads();
-  }
-
-  private generateComprehensiveLeads(): Lead[] {
-    const leads: Lead[] = [];
-    const companies = getAllGlobalCompanies();
-    
-    // Generate 1000+ leads from real companies
-    for (let i = 0; i < Math.min(companies.length, 1200); i++) {
-      const company = companies[i];
-      const lead = this.createRealisticLead(company, i);
-      leads.push(lead);
-    }
-
-    return leads;
-  }
-
-  private createRealisticLead(companyName: string, index: number): Lead {
-    const industries = [
-      'Technology', 'Healthcare', 'Finance', 'Manufacturing', 'Retail',
-      'Education', 'Real Estate', 'Consulting', 'Marketing', 'Legal',
-      'Automotive', 'Energy', 'Telecommunications', 'Media', 'Transportation',
-      'Biotechnology', 'Pharmaceuticals', 'Insurance', 'Banking', 'Investment',
-      'Software', 'Hardware', 'Aerospace', 'Defense', 'Agriculture'
-    ];
-
-    const locations = [
-      'San Francisco, CA', 'New York, NY', 'Los Angeles, CA', 'Chicago, IL',
-      'Boston, MA', 'Seattle, WA', 'Austin, TX', 'Denver, CO', 'Miami, FL',
-      'Atlanta, GA', 'London, UK', 'Paris, France', 'Berlin, Germany',
-      'Tokyo, Japan', 'Singapore', 'Sydney, Australia', 'Toronto, Canada',
-      'Amsterdam, Netherlands', 'Stockholm, Sweden', 'Zurich, Switzerland'
-    ];
-
-    const firstNames = [
-      'John', 'Sarah', 'Michael', 'Emily', 'David', 'Jessica', 'Christopher', 'Ashley',
-      'Matthew', 'Amanda', 'Daniel', 'Jennifer', 'James', 'Lisa', 'Robert', 'Mary',
-      'William', 'Patricia', 'Richard', 'Linda', 'Joseph', 'Barbara', 'Thomas', 'Susan'
-    ];
-
-    const lastNames = [
-      'Smith', 'Johnson', 'Brown', 'Davis', 'Wilson', 'Miller', 'Jones', 'Garcia',
-      'Rodriguez', 'Martinez', 'Anderson', 'Taylor', 'Thomas', 'Jackson', 'White',
-      'Harris', 'Martin', 'Thompson', 'Garcia', 'Martinez', 'Robinson', 'Clark'
-    ];
-
-    const titles = [
-      'CEO', 'CTO', 'CFO', 'COO', 'CMO', 'VP of Sales', 'VP of Marketing',
-      'VP of Engineering', 'Director of Sales', 'Director of Marketing',
-      'Head of Business Development', 'Senior Vice President', 'President',
-      'Founder', 'Co-Founder', 'Managing Director', 'General Manager'
-    ];
-
-    const statuses: Lead['status'][] = ['new', 'contacted', 'qualified', 'converted', 'rejected'];
-    
-    const firstName = firstNames[index % firstNames.length];
-    const lastName = lastNames[index % lastNames.length];
-    const contactPerson = `${firstName} ${lastName}`;
-    const industry = industries[index % industries.length];
-    const location = locations[index % locations.length];
-    const title = titles[index % titles.length];
-    const status = statuses[index % statuses.length];
-
-    // Generate realistic employee counts and revenue based on company type
-    const employeeCount = this.generateEmployeeCount(companyName);
-    const revenue = this.generateRevenue(employeeCount);
-    const score = this.generateScore(industry, employeeCount, revenue);
-
-    const domain = companyName.toLowerCase()
-      .replace(/[^a-z0-9]/g, '')
-      .substring(0, 15);
-
-    return {
-      id: `lead-${index + 1}`,
-      companyName,
-      industry,
-      website: `https://www.${domain}.com`,
-      email: `${firstName.toLowerCase()}.${lastName.toLowerCase()}@${domain}.com`,
-      gmail: Math.random() > 0.7 ? `${firstName.toLowerCase()}${lastName.toLowerCase()}@gmail.com` : undefined,
-      phone: this.generatePhoneNumber(location),
-      contactPerson,
-      title,
-      location,
-      employeeCount,
-      revenue,
-      score,
-      status,
-      createdAt: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000),
-      updatedAt: new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000),
-      socialMedia: {
-        linkedin: `https://linkedin.com/company/${domain}`,
-        twitter: Math.random() > 0.5 ? `https://twitter.com/${domain}` : undefined,
-        facebook: Math.random() > 0.6 ? `https://facebook.com/${domain}` : undefined,
-      },
-      linkedinProfile: `https://linkedin.com/in/${firstName.toLowerCase()}-${lastName.toLowerCase()}-${Math.floor(Math.random() * 999)}`,
-      description: this.generateCompanyDescription(companyName, industry),
-      tags: this.generateTags(industry, employeeCount, status),
-      notes: Math.random() > 0.8 ? this.generateNotes(status) : undefined,
-      source: this.generateSource(),
-    };
-  }
-
-  private generateEmployeeCount(companyName: string): number {
-    // Large tech companies
-    if (['Microsoft', 'Apple', 'Google', 'Amazon', 'Meta', 'IBM', 'Oracle'].includes(companyName)) {
-      return Math.floor(Math.random() * 200000) + 100000;
-    }
-    // Medium companies
-    if (Math.random() > 0.7) {
-      return Math.floor(Math.random() * 10000) + 1000;
-    }
-    // Small companies
-    return Math.floor(Math.random() * 500) + 10;
-  }
-
-  private generateRevenue(employeeCount: number): number {
-    // Revenue roughly correlates with employee count
-    const baseRevenue = employeeCount * (50000 + Math.random() * 200000);
-    return Math.floor(baseRevenue);
-  }
-
-  private generateScore(industry: string, employeeCount: number, revenue: number): number {
-    let score = 50; // Base score
-    
-    // Industry bonus
-    if (['Technology', 'Software', 'Healthcare', 'Finance'].includes(industry)) {
-      score += 20;
-    }
-    
-    // Size bonus
-    if (employeeCount > 1000) score += 15;
-    else if (employeeCount > 100) score += 10;
-    
-    // Revenue bonus
-    if (revenue > 100000000) score += 15;
-    else if (revenue > 10000000) score += 10;
-    
-    // Random variation
-    score += Math.floor(Math.random() * 20) - 10;
-    
-    return Math.max(0, Math.min(100, score));
-  }
-
-  private generatePhoneNumber(location: string): string {
-    const areaCodes: { [key: string]: string } = {
-      'San Francisco': '415',
-      'New York': '212',
-      'Los Angeles': '213',
-      'Chicago': '312',
-      'Boston': '617',
-      'Seattle': '206',
-      'London': '+44-20',
-      'Paris': '+33-1',
-      'Berlin': '+49-30',
-      'Tokyo': '+81-3',
-    };
-
-    const areaCode = areaCodes[location.split(',')[0]] || '555';
-    const number = Math.floor(Math.random() * 9000000) + 1000000;
-    
-    if (areaCode.startsWith('+')) {
-      return `${areaCode}-${number.toString().slice(0, 4)}-${number.toString().slice(4)}`;
-    }
-    
-    return `+1-${areaCode}-${number.toString().slice(0, 3)}-${number.toString().slice(3)}`;
-  }
-
-  private generateCompanyDescription(companyName: string, industry: string): string {
-    const templates = [
-      `${companyName} is a leading ${industry.toLowerCase()} company focused on innovation and growth.`,
-      `A dynamic ${industry.toLowerCase()} organization serving clients globally with cutting-edge solutions.`,
-      `${companyName} specializes in ${industry.toLowerCase()} services with a commitment to excellence.`,
-      `Innovative ${industry.toLowerCase()} company driving digital transformation and business success.`,
-      `${companyName} delivers world-class ${industry.toLowerCase()} solutions to enterprise clients.`
-    ];
-    
-    return templates[Math.floor(Math.random() * templates.length)];
-  }
-
-  private generateTags(industry: string, employeeCount: number, status: Lead['status']): string[] {
-    const tags: string[] = [];
-    
-    tags.push(industry);
-    
-    if (employeeCount > 1000) tags.push('Enterprise');
-    else if (employeeCount > 100) tags.push('Mid-Market');
-    else tags.push('SMB');
-    
-    if (status === 'qualified') tags.push('Hot Lead');
-    if (status === 'converted') tags.push('Customer');
-    
-    const additionalTags = ['B2B', 'SaaS', 'Cloud', 'AI', 'Digital', 'Innovation'];
-    tags.push(additionalTags[Math.floor(Math.random() * additionalTags.length)]);
-    
-    return tags;
-  }
-
-  private generateNotes(status: Lead['status']): string {
-    const notes = {
-      new: 'New lead from recent campaign. Needs initial outreach.',
-      contacted: 'Initial contact made. Waiting for response.',
-      qualified: 'Qualified lead with strong interest. Schedule demo.',
-      converted: 'Successfully converted to customer. Onboarding in progress.',
-      rejected: 'Not a good fit at this time. Follow up in 6 months.'
-    };
-    
-    return notes[status] || 'Lead requires follow-up.';
-  }
-
-  private generateSource(): string {
-    const sources = [
-      'LinkedIn', 'Website', 'Referral', 'Cold Email', 'Conference',
-      'Webinar', 'Content Marketing', 'Social Media', 'Partner',
-      'Trade Show', 'Google Ads', 'Organic Search'
-    ];
-    
-    return sources[Math.floor(Math.random() * sources.length)];
-  }
-
-  private startRealTimeUpdates() {
-    this.updateInterval = setInterval(() => {
-      // Simulate real-time updates
-      if (Math.random() > 0.95) { // 5% chance of update
-        const randomIndex = Math.floor(Math.random() * this.leads.length);
-        const lead = this.leads[randomIndex];
-        
-        // Update score slightly
-        lead.score = Math.max(0, Math.min(100, lead.score + (Math.random() - 0.5) * 10));
-        lead.updatedAt = new Date();
-        
-        this.notifyListeners();
+  private loadFromLocalStorage() {
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        this.leads = parsed.map((lead: Lead) => ({
+          ...lead,
+          createdAt: new Date(lead.createdAt),
+          updatedAt: new Date(lead.updatedAt),
+        }));
       }
-    }, 5000); // Update every 5 seconds
+    } catch (e) {
+      console.error('Failed to load leads from localStorage:', e);
+      this.leads = [];
+    }
+  }
+
+  private saveToLocalStorage() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.leads));
+    } catch (e) {
+      console.error('Failed to save leads to localStorage:', e);
+    }
   }
 
   private notifyListeners() {
@@ -266,6 +56,7 @@ class RealTimeLeadService {
 
   addLead(lead: Lead): void {
     this.leads.unshift(lead);
+    this.saveToLocalStorage();
     this.notifyListeners();
   }
 
@@ -273,19 +64,18 @@ class RealTimeLeadService {
     const index = this.leads.findIndex(lead => lead.id === id);
     if (index !== -1) {
       this.leads[index] = { ...this.leads[index], ...updates, updatedAt: new Date() };
+      this.saveToLocalStorage();
       this.notifyListeners();
     }
   }
 
   deleteLead(id: string): void {
     this.leads = this.leads.filter(lead => lead.id !== id);
+    this.saveToLocalStorage();
     this.notifyListeners();
   }
 
   destroy(): void {
-    if (this.updateInterval) {
-      clearInterval(this.updateInterval);
-    }
     this.listeners = [];
   }
 }
@@ -320,7 +110,39 @@ export const scrapeRealTimeLeads = async (
   query: string, 
   maxResults: number = 50
 ): Promise<Lead[]> => {
-  // Simulate API delay
+  if (USE_REAL_AI) {
+    try {
+      const aiLeads = await scrapeLeadsWithRealAI(source, query, maxResults);
+      return aiLeads.map((data: Record<string, unknown>, i: number) => {
+        const lead: Lead = {
+          id: `scraped-${Date.now()}-${i}-${Math.random().toString(36).substr(2, 9)}`,
+          companyName: (data.companyName as string) || 'Unknown Company',
+          contactPerson: (data.contactPerson as string) || undefined,
+          title: (data.title as string) || undefined,
+          email: (data.email as string) || undefined,
+          phone: (data.phone as string) || undefined,
+          website: (data.website as string) || '',
+          location: (data.location as string) || '',
+          industry: (data.industry as string) || 'Technology',
+          employeeCount: (data.employeeCount as number) || 50,
+          revenue: (data.revenue as number) || undefined,
+          score: 0,
+          status: 'new' as const,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          description: (data.description as string) || undefined,
+          tags: ['scraped', source],
+          source,
+        };
+        lead.score = calculateLeadScore(lead);
+        return lead;
+      });
+    } catch (error) {
+      console.error('Real AI scraping failed, using fallback:', error);
+    }
+  }
+
+  // Fallback: filter existing leads
   await new Promise(resolve => setTimeout(resolve, 2000));
   
   const allLeads = getRealTimeLeads();
@@ -352,9 +174,112 @@ export const scrapeRealTimeLeads = async (
   }));
 };
 
+// Validate enrichment field values - reject placeholders and unknowns
+const INVALID_VALUES = ['unknown', 'n/a', 'na', 'none', 'missing', 'not available', 'not found', 'null', 'undefined', ''];
+const isValidField = (val: unknown): val is string => {
+  if (typeof val !== 'string') return false;
+  const trimmed = val.trim();
+  if (!trimmed) return false;
+  return !INVALID_VALUES.includes(trimmed.toLowerCase());
+};
+const isValidNum = (val: unknown): val is number => typeof val === 'number' && val > 0;
+
+// Calculate lead score based on data completeness and company attributes
+export const calculateLeadScore = (lead: Lead): number => {
+  let score = 0;
+
+  // Company size factor (0-20)
+  if (lead.employeeCount > 1000) score += 20;
+  else if (lead.employeeCount > 500) score += 18;
+  else if (lead.employeeCount > 100) score += 15;
+  else if (lead.employeeCount > 10) score += 10;
+  else score += 5;
+
+  // Revenue factor (0-20)
+  if (lead.revenue && lead.revenue > 100000000) score += 20;
+  else if (lead.revenue && lead.revenue > 10000000) score += 18;
+  else if (lead.revenue && lead.revenue > 1000000) score += 14;
+  else if (lead.revenue && lead.revenue > 100000) score += 10;
+  else score += 5;
+
+  // Industry factor (0-15)
+  const highValueIndustries = ['Technology', 'Financial Services', 'Healthcare', 'Software', 'Fintech', 'SaaS'];
+  const mediumValueIndustries = ['Manufacturing', 'Retail', 'Real Estate', 'Energy', 'Telecommunications'];
+  if (highValueIndustries.some(ind => lead.industry.toLowerCase().includes(ind.toLowerCase()))) score += 15;
+  else if (mediumValueIndustries.some(ind => lead.industry.toLowerCase().includes(ind.toLowerCase()))) score += 10;
+  else score += 7;
+
+  // Data completeness factor (0-30)
+  if (lead.email) score += 5;
+  if (lead.phone) score += 5;
+  if (lead.contactPerson) score += 5;
+  if (lead.title) score += 3;
+  if (lead.website) score += 3;
+  if (lead.linkedinProfile || lead.socialMedia?.linkedin) score += 3;
+  if (lead.description) score += 3;
+  if (lead.socialMedia?.twitter) score += 1;
+  if (lead.revenue && lead.revenue > 0) score += 2;
+
+  // Geographic factor (0-10)
+  const tierOneCities = ['San Francisco', 'New York', 'London', 'Singapore', 'Tokyo', 'Berlin', 'Los Angeles', 'Seattle', 'Boston', 'Chicago'];
+  if (tierOneCities.some(city => lead.location.includes(city))) score += 10;
+  else score += 5;
+
+  // Status factor (0-5)
+  if (lead.status === 'qualified') score += 5;
+  else if (lead.status === 'contacted') score += 3;
+  else if (lead.status === 'converted') score += 5;
+
+  return Math.min(Math.max(score, 1), 100);
+};
+
 // Enhanced enrichment function
 export const enrichLeadWithRealData = async (lead: Lead): Promise<Lead> => {
-  // Simulate API delay
+  if (USE_REAL_AI) {
+    try {
+      console.log('[Enrichment] Starting AI enrichment for:', lead.companyName, '(ID:', lead.id, ')');
+      const aiData = await enrichLeadWithRealAIData(lead);
+      console.log('[Enrichment] AI returned data:', JSON.stringify(aiData));
+
+      if (!aiData || Object.keys(aiData).length === 0) {
+        console.warn('[Enrichment] AI returned empty data, using fallback');
+        throw new Error('AI returned empty enrichment data');
+      }
+
+      const enrichedLead: Lead = {
+        ...lead,
+        contactPerson: isValidField(aiData.contactPerson) ? (aiData.contactPerson as string) : lead.contactPerson,
+        title: isValidField(aiData.title) ? (aiData.title as string) : lead.title,
+        email: isValidField(aiData.email) ? (aiData.email as string) : lead.email,
+        phone: isValidField(aiData.phone) ? (aiData.phone as string) : lead.phone,
+        website: isValidField(aiData.website) ? (aiData.website as string) : lead.website,
+        linkedinProfile: isValidField(aiData.linkedinProfile) ? (aiData.linkedinProfile as string) : lead.linkedinProfile,
+        description: isValidField(aiData.description) ? (aiData.description as string) : lead.description,
+        revenue: isValidNum(aiData.revenue) ? (aiData.revenue as number) : lead.revenue,
+        employeeCount: isValidNum(aiData.employeeCount) ? (aiData.employeeCount as number) : lead.employeeCount,
+        socialMedia: {
+          linkedin: isValidField(aiData.linkedinProfile) ? (aiData.linkedinProfile as string) : lead.socialMedia?.linkedin,
+          twitter: isValidField(aiData.twitterHandle) ? (aiData.twitterHandle as string) : lead.socialMedia?.twitter,
+          facebook: lead.socialMedia?.facebook,
+        },
+        tags: Array.isArray(aiData.tags) && aiData.tags.length > 0 ? (aiData.tags as string[]) : lead.tags,
+        updatedAt: new Date(),
+      };
+
+      // Recalculate score based on newly enriched data
+      enrichedLead.score = calculateLeadScore(enrichedLead);
+
+      // Directly persist to the singleton + localStorage
+      realTimeLeadService.updateLead(lead.id, enrichedLead);
+      console.log('[Enrichment] Persisted enriched data for:', lead.companyName);
+
+      return enrichedLead;
+    } catch (error) {
+      console.error('[Enrichment] Real AI enrichment failed, using fallback:', error);
+    }
+  }
+
+  // Fallback: template-based enrichment
   await new Promise(resolve => setTimeout(resolve, 1000));
   
   const enrichedLead = { ...lead };
@@ -368,22 +293,28 @@ export const enrichLeadWithRealData = async (lead: Lead): Promise<Lead> => {
   
   // Add phone if missing
   if (!enrichedLead.phone) {
-    enrichedLead.phone = realTimeLeadService['generatePhoneNumber'](enrichedLead.location);
+    enrichedLead.phone = 'Contact via website';
   }
   
   // Add LinkedIn profile if missing
   if (!enrichedLead.linkedinProfile && enrichedLead.contactPerson) {
     const [firstName, lastName] = enrichedLead.contactPerson.split(' ');
-    enrichedLead.linkedinProfile = `https://linkedin.com/in/${firstName?.toLowerCase()}-${lastName?.toLowerCase()}-${Math.floor(Math.random() * 999)}`;
+    enrichedLead.linkedinProfile = `https://linkedin.com/in/${firstName?.toLowerCase()}-${lastName?.toLowerCase()}`;
   }
   
   // Add company description if missing
   if (!enrichedLead.description) {
-    enrichedLead.description = realTimeLeadService['generateCompanyDescription'](enrichedLead.companyName, enrichedLead.industry);
+    enrichedLead.description = `${enrichedLead.companyName} is a company in the ${enrichedLead.industry} industry.`;
   }
   
   // Update timestamp
   enrichedLead.updatedAt = new Date();
+  
+  // Recalculate score based on fallback enrichment
+  enrichedLead.score = calculateLeadScore(enrichedLead);
+  
+  // Persist fallback enrichment too
+  realTimeLeadService.updateLead(lead.id, enrichedLead);
   
   return enrichedLead;
 };
