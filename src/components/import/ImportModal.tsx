@@ -4,6 +4,14 @@ import {
   DocumentArrowUpIcon,
   ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
+import {
+  sanitizeInput,
+  validateCSVFormat,
+  validateFileSize,
+  validateFileType,
+  validateJSONFormat,
+  validateLeadData,
+} from '../../utils/validation';
 
 interface ImportModalProps {
   isOpen: boolean;
@@ -49,16 +57,58 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
   };
 
   const handleFile = (selectedFile: File) => {
-    const validTypes = ['text/csv', 'application/json', '.csv', '.json'];
+    const validTypes = ['text/csv', 'application/json'];
     const fileExtension = selectedFile.name.toLowerCase().split('.').pop();
     
-    if (!validTypes.includes(selectedFile.type) && !['csv', 'json'].includes(fileExtension || '')) {
+    if (!validateFileType(selectedFile, validTypes) && !['csv', 'json'].includes(fileExtension || '')) {
       setError('Please select a CSV or JSON file');
+      return;
+    }
+
+    if (!validateFileSize(selectedFile, 5)) {
+      setError('File size must be 5 MB or smaller');
       return;
     }
     
     setFile(selectedFile);
     setError(null);
+  };
+
+  const parseCSVLine = (line: string): string[] => {
+    const values: string[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const nextChar = line[i + 1];
+
+      if (char === '"' && nextChar === '"') {
+        current += '"';
+        i++;
+      } else if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        values.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+
+    values.push(current.trim());
+    return values;
+  };
+
+  const normalizeLeadRows = (rows: any[]): any[] => {
+    return rows.map(row => {
+      const normalized: Record<string, unknown> = {};
+      Object.entries(row).forEach(([key, value]) => {
+        const cleanKey = sanitizeInput(key);
+        normalized[cleanKey] = typeof value === 'string' ? sanitizeInput(value) : value;
+      });
+      return normalized;
+    });
   };
 
   const processFile = async () => {
@@ -72,19 +122,25 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
       let data: any[] = [];
       
       if (file.name.toLowerCase().endsWith('.json')) {
-        data = JSON.parse(text);
+        if (!validateJSONFormat(text)) {
+          throw new Error('Invalid JSON format');
+        }
+        const parsed = JSON.parse(text);
+        data = Array.isArray(parsed) ? parsed : [parsed];
       } else if (file.name.toLowerCase().endsWith('.csv')) {
-        // Simple CSV parser
+        if (!validateCSVFormat(text)) {
+          throw new Error('Invalid CSV format');
+        }
         const lines = text.split('\n');
-        const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+        const headers = parseCSVLine(lines[0]).map(h => sanitizeInput(h.replace(/"/g, '')));
         
         data = lines.slice(1)
           .filter(line => line.trim())
           .map(line => {
-            const values = line.split(',').map(v => v.trim().replace(/"/g, ''));
+            const values = parseCSVLine(line).map(v => v.replace(/"/g, ''));
             const obj: any = {};
             headers.forEach((header, index) => {
-              obj[header] = values[index] || '';
+              obj[header] = values[index] ? sanitizeInput(values[index]) : '';
             });
             return obj;
           });
@@ -92,6 +148,14 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
       
       if (data.length === 0) {
         throw new Error('No data found in file');
+      }
+
+      data = normalizeLeadRows(data);
+
+      const invalidRow = data.findIndex(row => !validateLeadData(row).valid);
+      if (invalidRow !== -1) {
+        const validation = validateLeadData(data[invalidRow]);
+        throw new Error(`Row ${invalidRow + 1} is invalid: ${validation.errors.join(', ')}`);
       }
       
       onImport(data);

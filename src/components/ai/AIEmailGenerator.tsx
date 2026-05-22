@@ -204,10 +204,10 @@ export const AIEmailGenerator: React.FC<AIEmailGeneratorProps> = ({ lead, onEmai
       <div className="mt-6 p-4 bg-blue-600/10 border border-blue-600/30 rounded-lg">
         <h4 className="text-sm font-medium text-blue-300 mb-2">AI Email Tips:</h4>
         <ul className="text-sm text-blue-200/80 space-y-1">
-          <li>• AI analyzes lead data to create personalized content</li>
-          <li>• Email tone adapts to company size and industry</li>
-          <li>• Personalization includes company-specific details</li>
-          <li>• Multiple variations available for A/B testing</li>
+          <li>- AI analyzes lead data to create personalized content</li>
+          <li>- Email tone adapts to company size and industry</li>
+          <li>- Personalization includes company-specific details</li>
+          <li>- Multiple variations available for A/B testing</li>
         </ul>
       </div>
     </div>

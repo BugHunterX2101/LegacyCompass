@@ -1,16 +1,5 @@
 import { Lead } from '../types';
-import { getRealTimeLeads, enrichLeadWithRealData, scrapeRealTimeLeads, exportRealTimeLeads } from './realTimeLeadService';
-
-// Use real-time leads instead of mock data
-export const generateMockLeads = (count: number): Lead[] => {
-  const realLeads = getRealTimeLeads();
-  return realLeads.slice(0, Math.min(count, realLeads.length));
-};
-
-// Enhanced scraping with real-time data
-export const scrapeLeadsFromSource = async (source: string, query: string = '', maxResults: number = 50): Promise<Lead[]> => {
-  return await scrapeRealTimeLeads(source, query, maxResults);
-};
+import { getRealTimeLeads, enrichLeadWithRealData, exportRealTimeLeads } from './realTimeLeadService';
 
 // Enhanced enrichment with real data
 export const enrichLead = async (lead: Lead): Promise<Lead> => {
@@ -20,10 +9,6 @@ export const enrichLead = async (lead: Lead): Promise<Lead> => {
 // Enhanced export functions
 export const exportLeadsToCSV = (leads: Lead[]): string => {
   return exportRealTimeLeads(leads, 'csv');
-};
-
-export const exportLeadsToJSON = (leads: Lead[]): string => {
-  return exportRealTimeLeads(leads, 'json');
 };
 
 // Get real-time leads for initial load

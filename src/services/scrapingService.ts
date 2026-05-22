@@ -1,7 +1,7 @@
 import { Lead } from '../types';
 import { fetchNews, NewsArticle } from './newsService';
 
-// Call OpenAI via server proxy to keep API key server-side
+// Call the server AI proxy to keep provider keys server-side.
 async function callAI(messages: Array<{role: string; content: string}>, temperature = 0.3, maxTokens = 2000): Promise<string | null> {
   try {
     const response = await fetch('/api/ai', {
@@ -47,7 +47,7 @@ async function extractCompaniesFromArticles(
 
   const articleSummaries = articles
     .slice(0, 10)
-    .map((a, i) => `[${i + 1}] "${a.title}" — ${a.description || 'No description'} (Source: ${a.source.name}, URL: ${a.url})`)
+    .map((a, i) => `[${i + 1}] "${a.title}" - ${a.description || 'No description'} (Source: ${a.source.name}, URL: ${a.url})`)
     .join('\n');
 
   const content = await callAI([
@@ -130,7 +130,7 @@ Return JSON: {
 }
 
 function buildNewsQuery(source: string, query: string): string {
-  // GNews works best with simple keyword queries — strip filler words and location qualifiers
+  // GNews works best with simple keyword queries; strip filler words and location qualifiers.
   const stopWords = ['companies', 'company', 'businesses', 'business', 'in', 'with', 'the', 'for', 'and', 'or', 'a', 'an', 'of', 'from', 'that', 'are', 'employees', 'employee', '100+', '500+', '1000+'];
   const words = query.trim().split(/\s+/).filter(w => !stopWords.includes(w.toLowerCase()));
 
@@ -330,7 +330,6 @@ export async function scrapeLeadsFromNews(
     notes: company.newsHeadline
       ? `Found in news: "${company.newsHeadline}"`
       : `Researched via AI for: "${query}"`,
-    linkedinUrl: undefined,
   }));
 
   onProgress?.(`Done! ${leads.length} leads ready.`, 100);

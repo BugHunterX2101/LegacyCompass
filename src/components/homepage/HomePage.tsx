@@ -82,7 +82,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onStartScrape, l
     {
       icon: SparklesIcon,
       title: 'Data Enrichment',
-      description: 'Fill every missing field — email, phone, LinkedIn, revenue — with real verified data.',
+      description: 'Fill missing email, phone, LinkedIn, revenue, and other key fields with verified data.',
       action: () => onNavigate('enrichment'),
       color: 'from-amber-500 to-orange-500',
       glowColor: 'rgba(245,158,11,0.15)'
@@ -180,7 +180,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onStartScrape, l
             </h1>
 
             <p className="text-base text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed animate-blur-in mt-6" style={{ animationDelay: '350ms', animationFillMode: 'backwards' }}>
-              AI-powered lead management with real-time enrichment, market analysis, and intelligent scoring — built for modern sales teams.
+              AI-powered lead management with real-time enrichment, market analysis, and intelligent scoring for modern sales teams.
             </p>
 
             {/* CTA Buttons */}
@@ -327,7 +327,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onStartScrape, l
             </div>
             <h3 className="text-lg font-semibold text-slate-100 mb-3">Our Mission</h3>
             <p className="text-slate-400 text-sm leading-relaxed">
-              To democratize sales intelligence by making enterprise-grade lead enrichment and market analysis accessible to every team — powered by cutting-edge AI.
+              To democratize sales intelligence by making enterprise-grade lead enrichment and market analysis accessible to every team.
             </p>
           </div>
 
@@ -349,7 +349,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onStartScrape, l
             </div>
             <h3 className="text-lg font-semibold text-slate-100 mb-3">Our Vision</h3>
             <p className="text-slate-400 text-sm leading-relaxed">
-              A world where every sales professional has an AI copilot — identifying the right leads, at the right time, with the right message, across 110+ countries.
+              A world where every sales professional has an AI copilot that identifies the right leads, at the right time, with the right message, across 110+ countries.
             </p>
           </div>
         </div>

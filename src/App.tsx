@@ -500,7 +500,7 @@ function App() {
               <div className="flex items-center justify-between">
                 <div>
                   <h3 className="text-lg font-semibold text-white">{selectedLead.companyName}</h3>
-                  <p className="text-sm text-gray-400">{selectedLead.industry} • {selectedLead.location}</p>
+                  <p className="text-sm text-gray-400">{selectedLead.industry} / {selectedLead.location}</p>
                 </div>
                 <button
                   onClick={() => setSelectedLead(null)}
@@ -534,15 +534,15 @@ function App() {
           <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-400">
-                © 2024 LegacyCompass Lead Intelligence Platform. Built with React & TypeScript.
+                Copyright 2024 LegacyCompass Lead Intelligence Platform. Built with React & TypeScript.
               </div>
               <div className="flex items-center space-x-4 text-sm text-gray-400">
                 <span>Total Leads: {leads.length}</span>
-                <span>•</span>
+                <span>/</span>
                 <span>Filtered: {filteredLeads.length}</span>
                 {selectedLeads.length > 0 && (
                   <>
-                    <span>•</span>
+                    <span>/</span>
                     <span>Selected: {selectedLeads.length}</span>
                   </>
                 )}

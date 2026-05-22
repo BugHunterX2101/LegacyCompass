@@ -243,7 +243,7 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-yellow-400">No new data found — all fields may already be filled or unverifiable</p>
+                  <p className="text-xs text-yellow-400">No new data found; all fields may already be filled or unverifiable</p>
                 )}
               </div>
             ))}
@@ -309,11 +309,11 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
                       
                       <div className="flex items-center space-x-4 text-sm text-gray-400 mb-3">
                         <span>{lead.industry}</span>
-                        <span>•</span>
+                        <span>/</span>
                         <span>{lead.location}</span>
                         {lead.contactPerson && (
                           <>
-                            <span>•</span>
+                            <span>/</span>
                             <span>{lead.contactPerson}</span>
                           </>
                         )}

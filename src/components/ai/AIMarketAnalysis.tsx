@@ -159,7 +159,7 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
 
   // Merge lead industries with master list, deduplicate and sort
   const allIndustries = [...new Set([...masterIndustries, ...industries])].sort();
-  // Only use master countries list — no city-level lead locations
+  // Only use master countries list; no city-level lead locations.
   const allLocations = masterLocations.sort();
 
   // Resolve default location to a country from the master list
@@ -389,7 +389,7 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
       <div className="mt-6">
         <NewsFeed 
           query={selectedIndustry} 
-          title={`${selectedIndustry} News — ${selectedLocation}`} 
+          title={`${selectedIndustry} News - ${selectedLocation}`} 
           maxResults={5}
           country={countryCodeMap[selectedLocation]}
         />

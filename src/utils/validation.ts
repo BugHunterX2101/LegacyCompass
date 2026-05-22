@@ -19,12 +19,6 @@ export const validateURL = (url: string): boolean => {
   }
 };
 
-export const sanitizeHTML = (input: string): string => {
-  const div = document.createElement('div');
-  div.textContent = input;
-  return div.innerHTML;
-};
-
 export const sanitizeInput = (input: string): string => {
   return input
     .replace(/[<>]/g, '')
@@ -45,10 +39,32 @@ export const validateFileSize = (file: File, maxSizeMB: number): boolean => {
 export const validateCSVFormat = (content: string): boolean => {
   const lines = content.split('\n');
   if (lines.length < 2) return false;
+
+  const countFields = (line: string): number => {
+    let count = 1;
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      const nextChar = line[i + 1];
+
+      if (char === '"' && nextChar === '"') {
+        i++;
+      } else if (char === '"') {
+        inQuotes = !inQuotes;
+      } else if (char === ',' && !inQuotes) {
+        count++;
+      }
+    }
+
+    return inQuotes ? -1 : count;
+  };
   
-  const headerCount = lines[0].split(',').length;
+  const headerCount = countFields(lines[0]);
+  if (headerCount <= 0) return false;
+
   return lines.slice(1).every(line => {
-    const fields = line.split(',').length;
+    const fields = countFields(line);
     return fields === headerCount || line.trim() === '';
   });
 };
@@ -60,10 +76,6 @@ export const validateJSONFormat = (content: string): boolean => {
   } catch {
     return false;
   }
-};
-
-export const escapeRegExp = (string: string): string => {
-  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 };
 
 export const validateLeadData = (lead: any): { valid: boolean; errors: string[] } => {

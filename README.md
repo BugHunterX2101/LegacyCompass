@@ -120,12 +120,11 @@ LegacyCompass/
 │   │   ├── homepage/                 # Home experience
 │   │   ├── import/                   # Lead import modal
 │   │   ├── layout/                   # Top-level layout controls
-│   │   ├── leads/                    # Lead tables, cards, filters, details
+│   │   ├── leads/                    # Lead table views
 │   │   ├── performance/              # Virtualized table and monitor
 │   │   ├── scraping/                 # Lead scraping modal
 │   │   └── search/                   # Advanced search controls
 │   ├── data/                         # Suggestion and company datasets
-│   ├── hooks/                        # Reusable React hooks
 │   ├── services/                     # AI, news, lead, analytics, performance services
 │   ├── types/                        # Shared TypeScript interfaces
 │   ├── utils/                        # Validation and performance utilities

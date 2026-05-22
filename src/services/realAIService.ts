@@ -1,6 +1,6 @@
 import { Lead } from '../types';
 
-async function callOpenAI(messages: { role: string; content: string }[], maxTokens = 500, temperature = 0.7) {
+async function callAIProxy(messages: { role: string; content: string }[], maxTokens = 500, temperature = 0.7) {
   const response = await fetch('/api/ai', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -13,7 +13,7 @@ async function callOpenAI(messages: { role: string; content: string }[], maxToke
 
   if (!response.ok) {
     const errorBody = await response.text();
-    throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorBody}`);
+    throw new Error(`AI proxy error: ${response.status} ${response.statusText} - ${errorBody}`);
   }
 
   const data = await response.json();
@@ -31,7 +31,7 @@ function parseJSON(content: string, fallback: Record<string, unknown>) {
 }
 
 export const analyzeLeadWithRealAI = async (lead: Lead) => {
-  const content = await callOpenAI([
+  const content = await callAIProxy([
     {
       role: 'system',
       content: 'You are a lead analysis expert for a B2B sales platform. Always respond with valid JSON only, no markdown.'
@@ -78,7 +78,7 @@ Provide at least 3 insights with varied types. Be specific to this company.`
 };
 
 export const generateEmailWithRealAI = async (lead: Lead, purpose: string) => {
-  const content = await callOpenAI([
+  const content = await callAIProxy([
     {
       role: 'system',
       content: 'You are an expert B2B sales copywriter who crafts highly personalized, effective outreach emails. Always respond with valid JSON only, no markdown.'
@@ -122,7 +122,7 @@ Rules:
 };
 
 export const analyzeMarketWithRealAI = async (industry: string, location: string) => {
-  const content = await callOpenAI([
+  const content = await callAIProxy([
     {
       role: 'system',
       content: 'You are an expert global market intelligence analyst specializing in B2B markets across all world regions. You have deep knowledge of local economies, regulations, key players, and market dynamics for every country. Provide highly location-specific, data-driven analysis. Always respond with valid JSON only, no markdown.'
@@ -144,7 +144,7 @@ Return JSON: {
   "marketOverview": {
     "marketSize": "string (estimated ${industry} market size specifically in ${location}, e.g. '$15B')",
     "growthRate": "string (annual growth rate in ${location}, e.g. '8.5% CAGR')",
-    "sentiment": "string (one word: Bullish, Neutral, or Bearish — based on ${location}'s outlook)"
+    "sentiment": "string (one word: Bullish, Neutral, or Bearish - based on ${location}'s outlook)"
   },
   "industryTrends": ["string (5 detailed trends specific to ${industry} in ${location}, mentioning local developments, policies, and data)"],
   "competitorInsights": ["string (5 competitive insights about key ${industry} players in ${location}, naming real local and international companies operating there)"],
@@ -153,7 +153,7 @@ Return JSON: {
   "recommendations": ["string (5 actionable recommendations for entering or growing in ${location}'s ${industry} market, with priority levels)"]
 }
 
-Be specific with real data, local company names, and market figures for ${location}. Do NOT give generic global analysis — everything must be tailored to ${location}.`
+Be specific with real data, local company names, and market figures for ${location}. Do NOT give generic global analysis - everything must be tailored to ${location}.`
     }
   ], 1500);
 
@@ -168,7 +168,7 @@ Be specific with real data, local company names, and market figures for ${locati
 };
 
 export const analyzeConversationWithRealAI = async (messages: string[]) => {
-  const content = await callOpenAI([
+  const content = await callAIProxy([
     {
       role: 'system',
       content: 'You are a sales conversation analyst. Always respond with valid JSON only, no markdown.'
@@ -200,7 +200,7 @@ Return JSON: {
 };
 
 export const enrichLeadWithRealAI = async (lead: Lead) => {
-  const content = await callOpenAI([
+  const content = await callAIProxy([
     {
       role: 'system',
       content: 'You are a B2B data enrichment specialist. Provide ONLY factual, verified data based on your confirmed knowledge of real companies. Every piece of information must be accurate and verifiable. Competitors must be real companies. Technologies must be ones the company actually uses. Do NOT invent, hallucinate, or guess any information. If you are unsure about something, write "unknown" for that field. Always respond with valid JSON only, no markdown.'
@@ -249,7 +249,7 @@ Return JSON: {
 };
 
 export const predictLeadOutcomeWithRealAI = async (lead: Lead) => {
-  const content = await callOpenAI([
+  const content = await callAIProxy([
     {
       role: 'system',
       content: 'You are a predictive sales analytics expert. Always respond with valid JSON only, no markdown.'
@@ -287,7 +287,7 @@ Return JSON: {
 };
 
 export const scrapeLeadsWithRealAI = async (source: string, query: string, maxResults: number): Promise<Array<Record<string, unknown>>> => {
-  const content = await callOpenAI([
+  const content = await callAIProxy([
     {
       role: 'system',
       content: 'You are a B2B lead research specialist. You MUST only provide data about REAL, VERIFIED, currently operating companies. Every company name, website, executive name, and location must be factually accurate and verifiable. Do NOT invent or hallucinate any companies or details. If you cannot find enough real companies, return fewer rather than fabricating data. Always respond with valid JSON only, no markdown.'
@@ -343,7 +343,7 @@ export const enrichLeadWithRealAIData = async (lead: Lead): Promise<Record<strin
   if (!lead.socialMedia?.linkedin) missingFields.push('linkedin');
   if (!lead.socialMedia?.twitter) missingFields.push('twitter');
 
-  const content = await callOpenAI([
+  const content = await callAIProxy([
     {
       role: 'system',
       content: 'You are a B2B data enrichment specialist. Provide ONLY factual, verified enrichment data based on your knowledge of real companies. Every piece of data must be accurate and verifiable. Use real company email domains, real publicly listed phone numbers, and real LinkedIn/Twitter company URLs. Do NOT fabricate or guess any information. If you are unsure about any detail, set it to "unknown" or 0. Always respond with valid JSON only, no markdown.'

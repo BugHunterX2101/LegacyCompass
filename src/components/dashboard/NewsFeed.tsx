@@ -120,7 +120,7 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({
               )}
               <div className="flex items-center gap-2 mt-1">
                 <span className="text-xs text-gray-500">{article.source.name}</span>
-                <span className="text-xs text-gray-600">•</span>
+                <span className="text-xs text-gray-600">/</span>
                 <span className="text-xs text-gray-500">
                   {new Date(article.publishedAt).toLocaleDateString()}
                 </span>
