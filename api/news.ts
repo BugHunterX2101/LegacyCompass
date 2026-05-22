@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-const GNEWS_API_KEY = process.env.GNEWS_API_KEY || '15ddd4cff5a66f63ae5ffe9110380f4a';
+const GNEWS_API_KEY = process.env.GNEWS_API_KEY || process.env.VITE_NEWS_API_KEY || '';
 const GNEWS_BASE = 'https://gnews.io/api/v4/search';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -14,6 +14,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (!q || typeof q !== 'string') {
     return res.status(400).json({ error: 'Missing query parameter "q"' });
+  }
+
+  if (!GNEWS_API_KEY) {
+    return res.status(500).json({
+      totalArticles: 0,
+      articles: [],
+      error: 'GNews API key not configured',
+    });
   }
 
   const params = new URLSearchParams({

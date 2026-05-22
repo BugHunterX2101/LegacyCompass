@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { aiService } from '../../services/aiService';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { NewsFeed } from '../dashboard/NewsFeed';
@@ -173,11 +173,7 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
   const [selectedIndustry, setSelectedIndustry] = useState(defaultIndustry);
   const [selectedLocation, setSelectedLocation] = useState(resolvedDefault);
 
-  useEffect(() => {
-    loadMarketAnalysis();
-  }, [selectedIndustry, selectedLocation]);
-
-  const loadMarketAnalysis = async () => {
+  const loadMarketAnalysis = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -189,7 +185,11 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
     } finally {
       setLoading(false);
     }
-  };
+  }, [selectedIndustry, selectedLocation]);
+
+  useEffect(() => {
+    loadMarketAnalysis();
+  }, [loadMarketAnalysis]);
 
   const handleRefresh = () => {
     // Clear cache for this query by forcing a new analysis

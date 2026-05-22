@@ -1,5 +1,3 @@
-const NEWS_API_KEY = (import.meta.env.VITE_NEWS_API_KEY || '').trim();
-
 export interface NewsArticle {
   title: string;
   description: string;
@@ -34,11 +32,6 @@ function setCache(key: string, data: NewsArticle[]) {
 }
 
 export async function fetchNews(query: string, maxResults = 10, country?: string): Promise<NewsArticle[]> {
-  if (!NEWS_API_KEY) {
-    console.warn('News API key not configured. Set VITE_NEWS_API_KEY.');
-    return [];
-  }
-
   const cacheKey = `${query}:${maxResults}:${country || ''}`;
   const cached = getCached(cacheKey);
   if (cached) return cached;

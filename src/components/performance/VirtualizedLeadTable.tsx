@@ -71,13 +71,9 @@ export const VirtualizedLeadTable: React.FC<VirtualizedLeadTableProps> = ({
     return sortedLeads.slice(startIndex, endIndex + 1);
   }, [sortedLeads, startIndex, endIndex]);
 
-  // Debounced scroll handler
-  const debouncedScrollHandler = useCallback(
-    performanceService.debounce('table-scroll', (e: React.UIEvent<HTMLDivElement>) => {
-      setScrollTop(e.currentTarget.scrollTop);
-    }, 16), // 60fps
-    []
-  );
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    setScrollTop(e.currentTarget.scrollTop);
+  }, []);
 
   const handleSort = useCallback((field: SortField) => {
     if (sortField === field) {
@@ -94,7 +90,7 @@ export const VirtualizedLeadTable: React.FC<VirtualizedLeadTableProps> = ({
     } else {
       onLeadSelect(leads.map(lead => lead.id));
     }
-  }, [selectedLeads.length, leads.length, leads, onLeadSelect]);
+  }, [selectedLeads.length, leads, onLeadSelect]);
 
   const handleSelectLead = useCallback((leadId: string) => {
     if (selectedLeads.includes(leadId)) {
@@ -194,7 +190,7 @@ export const VirtualizedLeadTable: React.FC<VirtualizedLeadTableProps> = ({
       <div 
         className="overflow-auto"
         style={{ height: containerHeight }}
-        onScroll={debouncedScrollHandler}
+        onScroll={handleScroll}
       >
         {/* Spacer for items before visible area */}
         <div style={{ height: startIndex * ITEM_HEIGHT }} />

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Lead, SearchFilter } from './types';
 import { TopBar } from './components/layout/TopBar';
 import { HomePage } from './components/homepage/HomePage';
@@ -34,10 +34,17 @@ import { notificationService } from './services/notificationService';
 
 type TabType = 'home' | 'dashboard' | 'leads' | 'enrichment' | 'ai-insights' | 'ai-email' | 'market-analysis';
 
+const SCORE_RANGES = [
+  { range: '0-20', min: 0, max: 20 },
+  { range: '21-40', min: 21, max: 40 },
+  { range: '41-60', min: 41, max: 60 },
+  { range: '61-80', min: 61, max: 80 },
+  { range: '81-100', min: 81, max: 100 }
+];
+
 function App() {
   const [activeTab, setActiveTab] = useState<TabType>('home');
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [filteredLeads, setFilteredLeads] = useState<Lead[]>([]);
   const [selectedLeads, setSelectedLeads] = useState<string[]>([]);
   const [showImportModal, setShowImportModal] = useState(false);
   const [showScrapeModal, setShowScrapeModal] = useState(false);
@@ -50,12 +57,10 @@ function App() {
   useEffect(() => {
     const initialLeads = getInitialLeads();
     setLeads(initialLeads);
-    setFilteredLeads(initialLeads);
 
     // Subscribe to real-time updates
     const unsubscribe = subscribeToLeadUpdates((updatedLeads) => {
       setLeads(updatedLeads);
-      setFilteredLeads(updatedLeads);
     });
 
     return unsubscribe;
@@ -66,8 +71,7 @@ function App() {
     setUseVirtualization(leads.length > 500); // Increase threshold for better performance
   }, [leads.length]);
 
-  // Apply search filters
-  useEffect(() => {
+  const filteredLeads = useMemo(() => {
     let filtered = leads;
 
     // Apply text search
@@ -108,7 +112,7 @@ function App() {
       });
     });
 
-    setFilteredLeads(filtered);
+    return filtered;
   }, [leads, searchFilters, searchQuery]);
 
   const handleSearch = (filters: SearchFilter[], query: string) => {
@@ -202,38 +206,31 @@ function App() {
     setSelectedLeads(leadIds);
   };
 
-  // Calculate top industries
-  const industryStats = leads.reduce((acc, lead) => {
-    if (!acc[lead.industry]) {
-      acc[lead.industry] = { count: 0, totalScore: 0 };
-    }
-    acc[lead.industry].count++;
-    acc[lead.industry].totalScore += lead.score;
-    return acc;
-  }, {} as Record<string, { count: number; totalScore: number }>);
+  const topIndustries = useMemo(() => {
+    const industryStats = leads.reduce((acc, lead) => {
+      if (!acc[lead.industry]) {
+        acc[lead.industry] = { count: 0, totalScore: 0 };
+      }
+      acc[lead.industry].count++;
+      acc[lead.industry].totalScore += lead.score;
+      return acc;
+    }, {} as Record<string, { count: number; totalScore: number }>);
 
-  const topIndustries = Object.entries(industryStats)
-    .map(([name, stats]) => ({
-      name,
-      count: stats.count,
-      avgScore: Math.round(stats.totalScore / stats.count)
-    }))
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 5);
+    return Object.entries(industryStats)
+      .map(([name, stats]) => ({
+        name,
+        count: stats.count,
+        avgScore: Math.round(stats.totalScore / stats.count)
+      }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+  }, [leads]);
 
   // Calculate score distribution
-  const scoreRanges = [
-    { range: '0-20', min: 0, max: 20 },
-    { range: '21-40', min: 21, max: 40 },
-    { range: '41-60', min: 41, max: 60 },
-    { range: '61-80', min: 61, max: 80 },
-    { range: '81-100', min: 81, max: 100 }
-  ];
-
-  const scoreDistribution = scoreRanges.map(range => ({
+  const scoreDistribution = useMemo(() => SCORE_RANGES.map(range => ({
     range: range.range,
     count: leads.filter(lead => lead.score >= range.min && lead.score <= range.max).length
-  }));
+  })), [leads]);
 
   const renderContent = () => {
     switch (activeTab) {

@@ -1,90 +1,184 @@
 # LegacyCompass
 
-**AI-powered B2B lead intelligence platform** — discover, enrich, score, and convert leads with real-time market insights across 110+ countries and 50+ industries.
+**AI-powered B2B lead intelligence platform**: discover, enrich, score, and convert leads with real-time market insights across 110+ countries and 50+ industries.
 
 ![React](https://img.shields.io/badge/React_18-61DAFB?logo=react&logoColor=black)
 ![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-06B6D4?logo=tailwindcss&logoColor=white)
 ![Vite](https://img.shields.io/badge/Vite_5-646CFF?logo=vite&logoColor=white)
 
----
+## Overview
 
-## What It Does
+LegacyCompass is a React and TypeScript lead intelligence app for sales teams that need lead discovery, enrichment, scoring, market analysis, and AI-assisted outreach in one workflow. The frontend runs on Vite, while AI and news requests are routed through server-side proxies so API keys do not need to be exposed in the browser.
+
+## Features
 
 | Feature | Description |
-|---------|-------------|
-| **Smart Scraping** | AI-driven lead discovery — scrape up to 50 real companies per batch with verified contacts |
-| **Data Enrichment** | Auto-fill missing fields: email, phone, LinkedIn, revenue, employee count |
-| **AI Lead Scoring** | Multi-factor scoring algorithm with conversion probability and risk assessment |
-| **Market AI** | Deep market analysis by industry × country — trends, competitors, regulations, opportunities |
-| **AI Email Generator** | Context-aware outreach emails with tone control and personalization |
-| **Real-Time News** | Location-specific industry news via GNews with country-level filtering |
-| **Analytics Dashboard** | Score distributions, industry breakdowns, status tracking, and KPIs |
-| **AI Insights** | Per-lead intelligence — competitor analysis, next-best-action, risk flags |
+| --- | --- |
+| Smart Scraping | AI-assisted lead discovery with deduplication and local persistence |
+| Data Enrichment | Fill missing email, phone, LinkedIn, revenue, employee count, and descriptions |
+| AI Lead Scoring | Multi-factor score calculation using company attributes and data completeness |
+| Market AI | Industry and country-level market analysis with trends, risks, and opportunities |
+| AI Email Generator | Personalized outreach emails with tone and purpose controls |
+| Real-Time News | Location-aware industry news via GNews through a server proxy |
+| Analytics Dashboard | KPIs, status tracking, score distribution, and top industries |
+| Performance Paths | Virtualized lead table, memoized dashboard calculations, and cached news queries |
+
+## Architecture
+
+```mermaid
+flowchart TD
+  User[User] --> Browser[React SPA]
+  Browser --> UI[Pages and Components]
+  UI --> LeadState[Lead State and Local Storage]
+  UI --> Services[Client Services]
+
+  Services --> NewsClient[News Service Cache]
+  Services --> AIClient[AI Service]
+  Services --> LeadClient[Lead and Enrichment Services]
+
+  NewsClient --> ApiNews[/api/news/]
+  AIClient --> ApiAI[/api/ai/]
+
+  ApiNews --> GNews[GNews API]
+  ApiAI --> Groq[Groq LLaMA 3.3 70B]
+
+  Browser --> StaticAssets[Vite Build Assets]
+  Express[Express Server] --> StaticAssets
+  Express --> ApiNews
+  Express --> ApiAI
+
+  Vercel[Vercel Serverless] --> ApiNews
+  Vercel --> ApiAI
+```
 
 ## Tech Stack
 
-- **Frontend:** React 18 · TypeScript · Tailwind CSS 3 · Vite 5
-- **AI Backend:** Groq API (LLaMA 3.3 70B) via Express proxy
-- **News:** GNews API with country-level filtering
-- **Performance:** Virtual scrolling · multi-layer caching · lazy loading
-- **Deployment:** Vercel (serverless API routes) or Express (self-hosted)
+| Layer | Technology |
+| --- | --- |
+| Frontend | React 18, TypeScript, Vite 5 |
+| Styling | Tailwind CSS |
+| Icons | Heroicons, Lucide React |
+| AI Proxy | Express or Vercel Serverless |
+| AI Provider | Groq API |
+| News Provider | GNews API |
+| Persistence | Browser localStorage |
+| Quality | TypeScript, ESLint, npm audit |
 
 ## Quick Start
 
 ```bash
-# Clone & install
 git clone https://github.com/BugHunterX2101/LegacyCompass.git
 cd LegacyCompass
 npm install
-
-# Configure environment
 cp .env.example .env
-# Add your GROQ_API_KEY and VITE_NEWS_API_KEY in .env
-
-# Development
-npm run dev          # Vite dev server (port 5173)
-npm run dev:server   # Express API server (port 3000)
-
-# Production
-npm run build        # TypeScript check + Vite build
-npm run serve        # Serve built app via Express
 ```
 
-## Project Structure
+Add your keys to `.env`:
 
+```env
+GROQ_API_KEY=your-groq-api-key-here
+GNEWS_API_KEY=your-gnews-api-key-here
+VITE_USE_REAL_AI=true
 ```
-src/
-├── components/
-│   ├── ai/            # AI Insights, Email Generator, Market Analysis, Conversation Intelligence
-│   ├── dashboard/     # Stats, Charts, News Feed
-│   ├── homepage/      # Landing page with About & Pricing sections
-│   ├── leads/         # Table, Cards, Detail view, Filters
-│   ├── enrichment/    # Data enrichment panel
-│   ├── scraping/      # Lead scraping modal
-│   ├── search/        # Advanced search
-│   └── common/        # Error boundaries, Score circles, Notifications
-├── services/          # AI, news, analytics, lead management, scraping services
-├── hooks/             # Custom React hooks
-├── types/             # TypeScript definitions
-└── utils/             # Validation, performance utilities
-server.js              # Express server — Groq AI & GNews API proxy
-api/                   # Vercel serverless functions (ai.ts, news.ts)
+
+Run locally:
+
+```bash
+npm run dev
+npm run dev:server
+```
+
+The Vite dev server runs on `http://localhost:5173`. The Express API/server runs on `http://localhost:3000`.
+
+## Scripts
+
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the Vite development server |
+| `npm run dev:server` | Start the Express API/static server |
+| `npm run typecheck` | Run TypeScript checks |
+| `npm run lint` | Run ESLint |
+| `npm test` | Run the project verification check |
+| `npm run build` | Type-check and build production assets |
+| `npm run serve` | Serve the built app with Express |
+| `npm run preview` | Preview the Vite build |
+
+## File Structure
+
+```text
+LegacyCompass/
+├── api/
+│   ├── ai.ts                         # Vercel AI proxy
+│   └── news.ts                       # Vercel GNews proxy
+├── src/
+│   ├── components/
+│   │   ├── ai/                       # AI insights, email, market, conversation views
+│   │   ├── common/                   # Shared UI and error handling
+│   │   ├── dashboard/                # Analytics cards, charts, news feed
+│   │   ├── enrichment/               # Lead enrichment workflow
+│   │   ├── homepage/                 # Home experience
+│   │   ├── import/                   # Lead import modal
+│   │   ├── layout/                   # Top-level layout controls
+│   │   ├── leads/                    # Lead tables, cards, filters, details
+│   │   ├── performance/              # Virtualized table and monitor
+│   │   ├── scraping/                 # Lead scraping modal
+│   │   └── search/                   # Advanced search controls
+│   ├── data/                         # Suggestion and company datasets
+│   ├── hooks/                        # Reusable React hooks
+│   ├── services/                     # AI, news, lead, analytics, performance services
+│   ├── types/                        # Shared TypeScript interfaces
+│   ├── utils/                        # Validation and performance utilities
+│   ├── App.tsx                       # Main application shell
+│   ├── index.css                     # Tailwind and global styles
+│   └── main.tsx                      # React entry point
+├── .env.example                      # Environment variable template
+├── eslint.config.js                  # ESLint flat config
+├── package.json                      # Scripts and dependencies
+├── server.js                         # Express server and API proxy
+├── tailwind.config.js                # Tailwind theme
+├── tsconfig*.json                    # TypeScript configs
+├── vercel.json                       # Vercel routing/deployment config
+└── vite.config.ts                    # Vite config and build optimization
 ```
 
 ## Environment Variables
 
-| Variable | Purpose |
-|----------|---------|
-| `GROQ_API_KEY` | Groq API key for AI features |
-| `VITE_NEWS_API_KEY` | GNews API key for real-time news |
-| `VITE_USE_REAL_AI` | Enable real AI calls (`true`/`false`) |
+| Variable | Required | Purpose |
+| --- | --- | --- |
+| `GROQ_API_KEY` | Yes for AI | Groq API key used by `/api/ai` |
+| `GNEWS_API_KEY` | Yes for news | GNews API key used by `/api/news` |
+| `VITE_USE_REAL_AI` | Optional | Toggle real AI workflows |
+| `VITE_API_URL` | Optional | API base URL override for deployments |
+| `VITE_ENABLE_PERFORMANCE_MONITORING` | Optional | Enables performance monitoring UI |
+
+The server also accepts `VITE_GROQ_API_KEY` and `VITE_NEWS_API_KEY` as backwards-compatible fallbacks, but server-side `GROQ_API_KEY` and `GNEWS_API_KEY` are preferred.
 
 ## Deployment
 
-**Vercel** — Push to GitHub and connect to Vercel. Serverless functions in `api/` handle AI and news proxying automatically.
+### Vercel
 
-**Self-hosted** — Run `npm run build && node server.js`. Express serves the built SPA and proxies API calls on port 3000.
+Push to GitHub and connect the repository in Vercel. The `api/` directory provides serverless handlers for AI and news proxying. Configure `GROQ_API_KEY` and `GNEWS_API_KEY` in the Vercel project settings.
+
+### Self-Hosted
+
+```bash
+npm run build
+npm run serve
+```
+
+Express serves the built SPA from `dist/` and exposes `/api/ai` and `/api/news` on the same origin.
+
+## Verification
+
+Before deploying, run:
+
+```bash
+npm run lint
+npm test
+npm run build
+npm audit
+```
 
 ## License
 

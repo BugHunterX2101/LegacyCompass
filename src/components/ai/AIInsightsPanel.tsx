@@ -38,7 +38,7 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead }) => {
     };
 
     generateInsights();
-  }, [lead.id]);
+  }, [lead]);
 
   const getInsightIcon = (type: string) => {
     switch (type) {

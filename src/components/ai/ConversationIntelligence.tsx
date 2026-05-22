@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Lead } from '../../types';
 import { aiService } from '../../services/aiService';
 import { LoadingSpinner } from '../common/LoadingSpinner';
@@ -27,11 +27,7 @@ export const ConversationIntelligence: React.FC<ConversationIntelligenceProps> =
   const [analysis, setAnalysis] = useState<ConversationAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    analyzeConversation();
-  }, [messages]);
-
-  const analyzeConversation = async () => {
+  const analyzeConversation = useCallback(async () => {
     try {
       setLoading(true);
       const result = await aiService.analyzeConversation(messages);
@@ -41,7 +37,11 @@ export const ConversationIntelligence: React.FC<ConversationIntelligenceProps> =
     } finally {
       setLoading(false);
     }
-  };
+  }, [messages]);
+
+  useEffect(() => {
+    analyzeConversation();
+  }, [analyzeConversation]);
 
   if (loading) {
     return (

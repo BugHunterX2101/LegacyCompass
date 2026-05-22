@@ -24,7 +24,7 @@ if (existsSync(envPath)) {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-const GNEWS_API_KEY = process.env.GNEWS_API_KEY || process.env.VITE_NEWS_API_KEY || '15ddd4cff5a66f63ae5ffe9110380f4a';
+const GNEWS_API_KEY = process.env.GNEWS_API_KEY || process.env.VITE_NEWS_API_KEY || '';
 const GROQ_API_KEY = process.env.GROQ_API_KEY || process.env.VITE_GROQ_API_KEY || '';
 
 app.use(express.json());
@@ -37,6 +37,14 @@ app.get('/api/news', async (req, res) => {
 
   if (!q || typeof q !== 'string') {
     return res.status(400).json({ error: 'Missing query parameter "q"' });
+  }
+
+  if (!GNEWS_API_KEY) {
+    return res.status(500).json({
+      totalArticles: 0,
+      articles: [],
+      error: 'GNews API key not configured. Add GNEWS_API_KEY or VITE_NEWS_API_KEY to .env',
+    });
   }
 
   const params = new URLSearchParams({
@@ -106,7 +114,7 @@ async function callGroqWithRetry(body, retriesLeft = AI_MAX_RETRIES) {
 
 app.post('/api/ai', async (req, res) => {
   if (!GROQ_API_KEY) {
-    return res.status(500).json({ error: 'Groq API key not configured. Add VITE_GROQ_API_KEY to .env' });
+    return res.status(500).json({ error: 'Groq API key not configured. Add GROQ_API_KEY or VITE_GROQ_API_KEY to .env' });
   }
 
   const { messages, temperature = 0.3, max_tokens = 2000 } = req.body || {};
@@ -157,5 +165,5 @@ app.listen(PORT, () => {
   console.log(`\n  LegacyCompass running at http://localhost:${PORT}\n`);
   console.log(`  API keys loaded:`);
   console.log(`    GNews:  ${GNEWS_API_KEY ? 'Yes' : 'Missing'}`);
-  console.log(`    Groq:   ${GROQ_API_KEY ? 'Yes' : 'Missing - add VITE_GROQ_API_KEY to .env'}\n`);
+  console.log(`    Groq:   ${GROQ_API_KEY ? 'Yes' : 'Missing - add GROQ_API_KEY to .env'}\n`);
 });
