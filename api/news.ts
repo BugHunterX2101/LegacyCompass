@@ -11,6 +11,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const q = req.query.q;
   const max = req.query.max || '10';
   const lang = req.query.lang || 'en';
+  const country = req.query.country;
 
   if (!q || typeof q !== 'string') {
     return res.status(400).json({ error: 'Missing query parameter "q"' });
@@ -30,6 +31,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     lang: String(lang),
     max: String(Math.min(Number(max) || 10, 10)),
   });
+  if (country && typeof country === 'string') {
+    params.set('country', country);
+  }
 
   try {
     const response = await fetch(`${GNEWS_BASE}?${params}`);

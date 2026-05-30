@@ -99,11 +99,12 @@ export const LeadTable: React.FC<LeadTableProps> = ({
       <ChevronDownIcon className="h-4 w-4" />;
   };
 
-  if (!leads) {
+  if (leads.length === 0) {
     return (
       <div className="bg-[#1E2328] rounded-lg border border-gray-700 overflow-hidden">
         <div className="text-center py-12">
-          <div className="text-gray-400 text-lg">Loading leads...</div>
+          <div className="text-gray-400 text-lg mb-2">No leads found</div>
+          <p className="text-sm text-gray-500">Try adjusting your search or import new leads.</p>
         </div>
       </div>
     );
@@ -351,12 +352,6 @@ export const LeadTable: React.FC<LeadTableProps> = ({
           </tbody>
         </table>
       </div>
-      
-      {leads.length === 0 && (
-        <div className="text-center py-12">
-          <div className="text-gray-400 text-lg">No leads found</div>
-        </div>
-      )}
     </div>
   )
 }

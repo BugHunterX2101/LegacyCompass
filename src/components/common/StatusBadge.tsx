@@ -1,7 +1,7 @@
 import React from 'react';
 
 interface StatusBadgeProps {
-  status: 'new' | 'qualified' | 'unqualified' | 'contacted' | 'converted' | 'rejected' | 'hot' | 'warm' | 'cold';
+  status: 'new' | 'contacted' | 'qualified' | 'converted' | 'rejected';
   size?: 'sm' | 'md';
 }
 
@@ -11,26 +11,21 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'md' })
     md: 'px-3 py-1 text-sm'
   };
 
-  const statusConfig = {
+  const statusConfig: Record<string, { bg: string; text: string; label: string }> = {
     new: {
       bg: 'bg-blue-600/20',
       text: 'text-blue-300',
       label: 'New'
     },
-    qualified: {
-      bg: 'bg-green-600/20',
-      text: 'text-green-300',
-      label: 'Qualified'
-    },
-    unqualified: {
-      bg: 'bg-red-600/20',
-      text: 'text-red-300',
-      label: 'Unqualified'
-    },
     contacted: {
       bg: 'bg-yellow-600/20',
       text: 'text-yellow-300',
       label: 'Contacted'
+    },
+    qualified: {
+      bg: 'bg-green-600/20',
+      text: 'text-green-300',
+      label: 'Qualified'
     },
     converted: {
       bg: 'bg-purple-600/20',
@@ -42,21 +37,6 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status, size = 'md' })
       text: 'text-red-300',
       label: 'Rejected'
     },
-    hot: {
-      bg: 'bg-red-600/20',
-      text: 'text-red-300',
-      label: 'Hot'
-    },
-    warm: {
-      bg: 'bg-orange-600/20',
-      text: 'text-orange-300',
-      label: 'Warm'
-    },
-    cold: {
-      bg: 'bg-gray-600/20',
-      text: 'text-gray-300',
-      label: 'Cold'
-    }
   };
 
   const config = statusConfig[status];

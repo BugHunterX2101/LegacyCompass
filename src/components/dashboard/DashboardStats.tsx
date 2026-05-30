@@ -33,7 +33,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ leads }) => {
       icon: UserGroupIcon,
       color: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-500/10',
-      progress: Math.min((analytics.totalLeads / Math.max(analytics.totalLeads, 1)) * 100, 100),
+      progress: Math.min((analytics.totalLeads / 1000) * 100, 100),
       subtitle: `${analytics.leadsByIndustry.length} industries`
     },
     {

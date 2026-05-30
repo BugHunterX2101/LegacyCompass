@@ -5,7 +5,8 @@ import { LoadingSpinner } from '../common/LoadingSpinner';
 import { 
   SparklesIcon, 
   ClipboardDocumentIcon,
-  PaperAirplaneIcon
+  PaperAirplaneIcon,
+  ExclamationTriangleIcon
 } from '@heroicons/react/24/outline';
 
 interface AIEmailTemplate {
@@ -25,6 +26,7 @@ export const AIEmailGenerator: React.FC<AIEmailGeneratorProps> = ({ lead, onEmai
   const [loading, setLoading] = useState(false);
   const [purpose, setPurpose] = useState('introduction');
   const [copied, setCopied] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const purposes = [
     { value: 'introduction', label: 'Introduction Email' },
@@ -37,11 +39,13 @@ export const AIEmailGenerator: React.FC<AIEmailGeneratorProps> = ({ lead, onEmai
   const generateEmail = async () => {
     try {
       setLoading(true);
+      setError(null);
       const template = await aiService.generatePersonalizedEmail(lead, purpose);
       setEmailTemplate(template);
       onEmailGenerated?.(template);
-    } catch (error) {
-      console.error('Email generation error:', error);
+    } catch (err) {
+      console.error('Email generation error:', err);
+      setError('Failed to generate email. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -116,6 +120,14 @@ export const AIEmailGenerator: React.FC<AIEmailGeneratorProps> = ({ lead, onEmai
           )}
         </button>
       </div>
+
+      {/* Error State */}
+      {error && (
+        <div className="mb-6 p-3 bg-red-900/20 border border-red-700 rounded-lg flex items-center space-x-2">
+          <ExclamationTriangleIcon className="h-4 w-4 text-red-400 flex-shrink-0" />
+          <span className="text-red-400 text-sm">{error}</span>
+        </div>
+      )}
 
       {/* Generated Email */}
       {emailTemplate && (

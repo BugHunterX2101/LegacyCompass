@@ -15,6 +15,7 @@ import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { AIInsightsPanel } from './components/ai/AIInsightsPanel';
 import { AIEmailGenerator } from './components/ai/AIEmailGenerator';
 import { AIMarketAnalysisComponent } from './components/ai/AIMarketAnalysis';
+import { ConversationIntelligence } from './components/ai/ConversationIntelligence';
 import { VirtualizedLeadTable } from './components/performance/VirtualizedLeadTable';
 import { PerformanceMonitor } from './components/performance/PerformanceMonitor';
 import { NewsFeed } from './components/dashboard/NewsFeed';
@@ -28,11 +29,12 @@ import {
   LightBulbIcon,
   EnvelopeIcon,
   ArrowTrendingUpIcon,
+  ChatBubbleLeftRightIcon,
 } from '@heroicons/react/24/outline';
 import { subscribeToLeadUpdates } from './services/realTimeLeadService';
 import { notificationService } from './services/notificationService';
 
-type TabType = 'home' | 'dashboard' | 'leads' | 'enrichment' | 'ai-insights' | 'ai-email' | 'market-analysis';
+type TabType = 'home' | 'dashboard' | 'leads' | 'enrichment' | 'ai-insights' | 'ai-email' | 'market-analysis' | 'conversation';
 
 const SCORE_RANGES = [
   { range: '0-20', min: 0, max: 20 },
@@ -390,6 +392,15 @@ function App() {
         );
       }
 
+      case 'conversation':
+        return selectedLead ? (
+          <ConversationIntelligence lead={selectedLead} messages={[]} />
+        ) : (
+          <div className="text-center py-12 text-gray-400">
+            Select a lead to analyze conversation intelligence
+          </div>
+        );
+
       default:
         return null;
     }
@@ -415,6 +426,7 @@ function App() {
                 { id: 'enrichment', label: 'Enrichment', Icon: SparklesIcon },
                 { id: 'ai-insights', label: 'AI Insights', Icon: LightBulbIcon },
                 { id: 'ai-email', label: 'AI Email', Icon: EnvelopeIcon },
+                { id: 'conversation', label: 'Conversation AI', Icon: ChatBubbleLeftRightIcon },
                 { id: 'market-analysis', label: 'Market AI', Icon: ArrowTrendingUpIcon },
               ].map((tab) => (
                 <button
@@ -433,7 +445,7 @@ function App() {
                       {filteredLeads.length}
                     </span>
                   )}
-                  {(tab.id === 'ai-insights' || tab.id === 'ai-email') && selectedLead && (
+                  {(tab.id === 'ai-insights' || tab.id === 'ai-email' || tab.id === 'conversation') && selectedLead && (
                     <span className="bg-green-600 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
                       1
                     </span>
@@ -448,13 +460,13 @@ function App() {
         <main className={activeTab === 'home' ? '' : 'max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8'}>
           <div key={activeTab} className="animate-fade-in-up">
             {/* Lead Selection for AI Features */}
-            {(activeTab === 'ai-insights' || activeTab === 'ai-email') && !selectedLead && (
+            {(activeTab === 'ai-insights' || activeTab === 'ai-email' || activeTab === 'conversation') && !selectedLead && (
               <div className="mb-6 bg-[#1E2328] rounded-lg border border-gray-700 p-4">
                 <h3 className="text-lg font-semibold text-white mb-1">
                   Select a Lead for AI Analysis
                 </h3>
                 <p className="text-sm text-gray-400 mb-3">
-                  Choose a lead to generate {activeTab === 'ai-insights' ? 'AI-powered insights' : 'personalized emails'}
+                  Choose a lead to generate {activeTab === 'ai-insights' ? 'AI-powered insights' : activeTab === 'conversation' ? 'conversation intelligence' : 'personalized emails'}
                 </p>
                 <input
                   type="text"
@@ -497,7 +509,7 @@ function App() {
               </div>
             )}
 
-            {selectedLead && (activeTab === 'ai-insights' || activeTab === 'ai-email') && (
+            {selectedLead && (activeTab === 'ai-insights' || activeTab === 'ai-email' || activeTab === 'conversation') && (
               <div className="mb-6 bg-[#1E2328] rounded-lg border border-gray-700 p-4">
                 <div className="flex items-center justify-between">
                   <div>
@@ -538,7 +550,7 @@ function App() {
           <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-400">
-                Copyright 2024 LegacyCompass Lead Intelligence Platform. Built with React &amp; TypeScript.
+                Copyright {new Date().getFullYear()} LegacyCompass Lead Intelligence Platform. Built with React &amp; TypeScript.
               </div>
               <div className="flex items-center space-x-4 text-sm text-gray-400">
                 <span>Total Leads: {leads.length}</span>

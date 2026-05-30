@@ -5,7 +5,7 @@ interface ScoreDistributionChartProps {
 }
 
 export const ScoreDistributionChart: React.FC<ScoreDistributionChartProps> = ({ data }) => {
-  const maxCount = Math.max(...data.map(d => d.count));
+  const maxCount = Math.max(...data.map(d => d.count), 1);
 
   return (
     <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">

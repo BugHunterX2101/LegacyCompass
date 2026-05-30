@@ -8,7 +8,7 @@
   }
 
   body {
-    @apply bg-[#12161C] text-slate-200 antialiased;
+    @apply bg-[#0D1117] text-slate-200 antialiased;
   }
 }
 
@@ -93,7 +93,7 @@
     @apply bg-purple-600/20 text-purple-300 border border-purple-600/30 px-2 py-1 rounded-full text-xs;
   }
 
-  .status-lost {
+  .status-rejected {
     @apply bg-red-600/20 text-red-300 border border-red-600/30 px-2 py-1 rounded-full text-xs;
   }
 
@@ -444,6 +444,7 @@
 
 /* Core animations */
 .animate-fadeIn       { animation: fadeIn 0.3s ease-out; }
+.animate-fade-in      { animation: fadeIn 0.3s ease-out; }
 .animate-slideIn      { animation: slideIn 0.3s ease-out; }
 .animate-fade-in-up   { animation: fadeInUp 0.4s ease-out forwards; }
 .animate-scale-in     { animation: scaleIn 0.25s ease-out forwards; }
