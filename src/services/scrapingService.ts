@@ -2,7 +2,11 @@ import { Lead } from '../types';
 import { fetchNews, NewsArticle } from './newsService';
 
 // Call the server AI proxy to keep provider keys server-side.
-async function callAI(messages: Array<{role: string; content: string}>, temperature = 0.3, maxTokens = 2000): Promise<string | null> {
+async function callAI(
+  messages: Array<{ role: string; content: string }>,
+  temperature = 0.3,
+  maxTokens = 2000
+): Promise<string | null> {
   try {
     const response = await fetch('/api/ai', {
       method: 'POST',
@@ -47,13 +51,17 @@ async function extractCompaniesFromArticles(
 
   const articleSummaries = articles
     .slice(0, 10)
-    .map((a, i) => `[${i + 1}] "${a.title}" - ${a.description || 'No description'} (Source: ${a.source.name}, URL: ${a.url})`)
+    .map(
+      (a, i) =>
+        `[${i + 1}] "${a.title}" - ${a.description || 'No description'} (Source: ${a.source.name}, URL: ${a.url})`
+    )
     .join('\n');
 
   const content = await callAI([
     {
       role: 'system',
-      content: 'You are a B2B lead extraction specialist. Extract ONLY real, verified company information from news articles. Every company you return MUST be a real, currently operating company. Do NOT invent or hallucinate any company names, websites, or executive names. If unsure whether a company is real, omit it. Always respond with valid JSON only, no markdown.',
+      content:
+        'You are a B2B lead extraction specialist. Extract ONLY real, verified company information from news articles. Every company you return MUST be a real, currently operating company. Do NOT invent or hallucinate any company names, websites, or executive names. If unsure whether a company is real, omit it. Always respond with valid JSON only, no markdown.',
     },
     {
       role: 'user',
@@ -97,29 +105,31 @@ Return JSON: {
     if (!jsonMatch) return [];
 
     const parsed = JSON.parse(jsonMatch[0]);
-    const companies: ScrapedCompany[] = (parsed.companies || []).map((c: Record<string, unknown>) => {
-      const articleIdx = ((c.articleIndex as number) || 1) - 1;
-      const article = articles[articleIdx] || articles[0];
-      return {
-        companyName: (c.companyName as string) || 'Unknown',
-        contactPerson: (c.contactPerson as string) || undefined,
-        title: (c.title as string) || undefined,
-        website: (c.website as string) || article?.source?.url || '',
-        location: (c.location as string) || '',
-        industry: (c.industry as string) || 'Technology',
-        employeeCount: (c.employeeCount as number) || 50,
-        revenue: (c.revenue as number) || undefined,
-        description: (c.description as string) || article?.description || '',
-        source: 'News Scraper',
-        newsHeadline: article?.title,
-        newsUrl: article?.url,
-      };
-    });
+    const companies: ScrapedCompany[] = (parsed.companies || []).map(
+      (c: Record<string, unknown>) => {
+        const articleIdx = ((c.articleIndex as number) || 1) - 1;
+        const article = articles[Math.max(0, Math.min(articleIdx, articles.length - 1))];
+        return {
+          companyName: (c.companyName as string) || 'Unknown',
+          contactPerson: (c.contactPerson as string) || undefined,
+          title: (c.title as string) || undefined,
+          website: (c.website as string) || article?.source?.url || '',
+          location: (c.location as string) || '',
+          industry: (c.industry as string) || 'Technology',
+          employeeCount: (c.employeeCount as number) || 50,
+          revenue: (c.revenue as number) > 0 ? (c.revenue as number) : undefined,
+          description: (c.description as string) || article?.description || '',
+          source: 'News Scraper',
+          newsHeadline: article?.title,
+          newsUrl: article?.url,
+        };
+      }
+    );
 
     const seen = new Set<string>();
     return companies.filter((c) => {
-      const key = c.companyName.toLowerCase();
-      if (seen.has(key)) return false;
+      const key = c.companyName.toLowerCase().trim();
+      if (!key || key === 'unknown' || seen.has(key)) return false;
       seen.add(key);
       return true;
     });
@@ -130,9 +140,15 @@ Return JSON: {
 }
 
 function buildNewsQuery(source: string, query: string): string {
-  // GNews works best with simple keyword queries; strip filler words and location qualifiers.
-  const stopWords = ['companies', 'company', 'businesses', 'business', 'in', 'with', 'the', 'for', 'and', 'or', 'a', 'an', 'of', 'from', 'that', 'are', 'employees', 'employee', '100+', '500+', '1000+'];
-  const words = query.trim().split(/\s+/).filter(w => !stopWords.includes(w.toLowerCase()));
+  const stopWords = [
+    'companies', 'company', 'businesses', 'business', 'in', 'with', 'the', 'for',
+    'and', 'or', 'a', 'an', 'of', 'from', 'that', 'are', 'employees', 'employee',
+    '100+', '500+', '1000+',
+  ];
+  const words = query
+    .trim()
+    .split(/\s+/)
+    .filter(w => !stopWords.includes(w.toLowerCase()));
 
   const sourceHints: Record<string, string> = {
     business: '',
@@ -153,19 +169,52 @@ async function generateLeadsBatch(
   existingNames: Set<string>,
   batchNumber: number
 ): Promise<ScrapedCompany[]> {
-  const excludeClause = existingNames.size > 0
-    ? `\n\nDo NOT include these companies (already found): ${[...existingNames].join(', ')}` : '';
+  const excludeClause =
+    existingNames.size > 0
+      ? `\n\nDo NOT include these companies (already found): ${[...existingNames].join(', ')}`
+      : '';
 
-  const content = await callAI([
+  const content = await callAI(
+    [
+      {
+        role: 'system',
+        content:
+          'You are a B2B lead research specialist. You MUST only provide REAL, VERIFIED, currently operating companies. Every company name, website, executive name, and location you provide must be factually accurate. Do NOT invent or hallucinate any data. If you cannot find enough real companies, return fewer rather than making up fake ones. Respond with valid JSON only, no markdown.',
+      },
+      {
+        role: 'user',
+        content: `Find exactly ${batchSize} REAL, VERIFIED companies matching this search: "${query}" (category: ${source}).${excludeClause}
+
+STRICT RULES:
+- Every company MUST be a real, currently operating business that can be looked up online
+- Website must be the company's ACTUAL domain (e.g., stripe.com, not a placeholder)
+- Contact person must be the company's REAL, publicly known CEO or executive
+- Location must be the company's real headquarters
+- Employee count must reflect real approximate headcount
+- Revenue must be based on publicly reported or estimated figures
+- If you cannot verify a company is real, do NOT include it
+
+Return JSON: {
+  "companies": [
     {
-      role: 'system',
-      content: 'You are a B2B lead research specialist. You MUST only provide REAL, VERIFIED, currently operating companies. Every company name, website, executive name, and location you provide must be factually accurate. Do NOT invent or hallucinate any data. If you cannot find enough real companies, return fewer rather than making up fake ones. Respond with valid JSON only, no markdown.',
-    },
-    {
-      role: 'user',
-      content: `Find exactly ${batchSize} REAL, VERIFIED companies matching this search: "${query}" (category: ${source}).${excludeClause}\n\nSTRICT RULES:\n- Every company MUST be a real, currently operating business that can be looked up online\n- Website must be the company's ACTUAL domain (e.g., stripe.com, not a placeholder)\n- Contact person must be the company's REAL, publicly known CEO or executive\n- Location must be the company's real headquarters\n- Employee count must reflect real approximate headcount\n- Revenue must be based on publicly reported or estimated figures\n- If you cannot verify a company is real, do NOT include it\n\nReturn JSON: {\n  "companies": [\n    {\n      "companyName": "string (real verified company name)",\n      "industry": "string",\n      "location": "string (real HQ city, country)",\n      "description": "string (factual description of what the company does)",\n      "employeeCount": number (real approximate count),\n      "revenue": number (annual revenue USD, 0 if unknown),\n      "website": "string (actual company domain)",\n      "contactPerson": "string (real CEO/executive name)",\n      "title": "string (their actual title)",\n      "foundedYear": number (year company was founded, 0 if unknown)\n    }\n  ]\n}`,
-    },
-  ], 0.3, 3000);
+      "companyName": "string (real verified company name)",
+      "industry": "string",
+      "location": "string (real HQ city, country)",
+      "description": "string (factual description of what the company does)",
+      "employeeCount": number (real approximate count),
+      "revenue": number (annual revenue USD, 0 if unknown),
+      "website": "string (actual company domain)",
+      "contactPerson": "string (real CEO/executive name)",
+      "title": "string (their actual title)",
+      "foundedYear": number (year company was founded, 0 if unknown)
+    }
+  ]
+}`,
+      },
+    ],
+    0.3,
+    3000
+  );
 
   if (!content) return [];
 
@@ -182,7 +231,7 @@ async function generateLeadsBatch(
       location: (c.location as string) || '',
       industry: (c.industry as string) || 'Technology',
       employeeCount: (c.employeeCount as number) || 50,
-      revenue: (c.revenue as number) || undefined,
+      revenue: (c.revenue as number) > 0 ? (c.revenue as number) : undefined,
       description: (c.description as string) || '',
       source: 'AI Research',
     }));
@@ -215,17 +264,17 @@ async function generateLeadsWithAI(
 
     const batch = await generateLeadsBatch(source, query, thisBatch, seenNames, batchNumber);
 
-    if (batch.length === 0) break; // AI returned nothing, stop
+    if (batch.length === 0) break;
 
     for (const company of batch) {
-      const key = company.companyName.toLowerCase();
-      if (!seenNames.has(key) && allCompanies.length < maxResults) {
+      const key = company.companyName.toLowerCase().trim();
+      if (key && key !== 'unknown' && !seenNames.has(key) && allCompanies.length < maxResults) {
         seenNames.add(key);
         allCompanies.push(company);
       }
     }
 
-    // Safety: if AI keeps returning duplicates, stop after too many batches
+    // Safety: stop after too many batches
     if (batchNumber >= Math.ceil(maxResults / BATCH_SIZE) + 2) break;
   }
 
@@ -239,36 +288,26 @@ export async function scrapeLeadsFromNews(
   onProgress?: (step: string, percent: number) => void
 ): Promise<Lead[]> {
   // Cap at 50
-  const targetCount = Math.min(maxResults, 50);
+  const targetCount = Math.min(Math.max(maxResults, 1), 50);
 
   onProgress?.('Searching real-time news sources...', 5);
 
   // Fetch real news articles matching the query
   const newsQuery = buildNewsQuery(source, query);
-  let articles = await fetchNews(newsQuery, 10);
+  let articles: NewsArticle[] = [];
 
-  if (articles.length === 0) {
-    onProgress?.('Broadening search...', 10);
-    articles = await fetchNews(query, 10);
-  }
+  // Try progressively broader queries
+  const queriesToTry = [
+    newsQuery,
+    query,
+    query.split(/\s+/).find(w => w.length > 3) || query.split(/\s+/)[0],
+    ({ business: 'business technology companies', funding: 'startup funding investment', industry: 'industry market growth', global: 'global business trade' } as Record<string,string>)[source] || 'technology companies',
+  ].filter(Boolean);
 
-  if (articles.length === 0) {
-    const firstWord = query.split(/\s+/).find(w => w.length > 3) || query.split(/\s+/)[0];
-    if (firstWord) {
-      articles = await fetchNews(firstWord, 10);
-    }
-  }
-
-  if (articles.length === 0) {
-    const fallbackQueries: Record<string, string> = {
-      business: 'business technology companies',
-      funding: 'startup funding investment',
-      industry: 'industry market growth',
-      global: 'global business trade',
-    };
-    const fallback = fallbackQueries[source] || 'technology companies';
-    onProgress?.('Trying broader news search...', 15);
-    articles = await fetchNews(fallback, 10);
+  for (const q of queriesToTry) {
+    if (articles.length > 0) break;
+    onProgress?.(`Searching: "${q}"...`, 5 + queriesToTry.indexOf(q) * 3);
+    articles = await fetchNews(q, 10);
   }
 
   // Extract companies from articles first
@@ -290,11 +329,10 @@ export async function scrapeLeadsFromNews(
     );
     const aiCompanies = await generateLeadsWithAI(source, query, remaining, onProgress);
 
-    // Deduplicate against news-extracted companies
-    const existingNames = new Set(companies.map(c => c.companyName.toLowerCase()));
+    const existingNames = new Set(companies.map(c => c.companyName.toLowerCase().trim()));
     for (const c of aiCompanies) {
-      const key = c.companyName.toLowerCase();
-      if (!existingNames.has(key) && companies.length < targetCount) {
+      const key = c.companyName.toLowerCase().trim();
+      if (key && !existingNames.has(key) && companies.length < targetCount) {
         existingNames.add(key);
         companies.push(c);
       }
@@ -302,7 +340,9 @@ export async function scrapeLeadsFromNews(
   }
 
   if (companies.length === 0) {
-    throw new Error('Could not find companies for your query. Please try a different search.');
+    throw new Error(
+      'Could not find companies for your query. Please try a different search term.'
+    );
   }
 
   onProgress?.(`Building ${companies.length} lead profiles...`, 90);

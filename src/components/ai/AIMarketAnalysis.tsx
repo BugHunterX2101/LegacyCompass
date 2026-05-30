@@ -2,14 +2,14 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { aiService } from '../../services/aiService';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { NewsFeed } from '../dashboard/NewsFeed';
-import { 
-  ChartBarIcon, 
-  ArrowTrendingUpIcon, 
+import {
+  ChartBarIcon,
+  ArrowTrendingUpIcon,
   ExclamationTriangleIcon,
   LightBulbIcon,
   UserGroupIcon,
   ArrowPathIcon,
-  GlobeAltIcon
+  GlobeAltIcon,
 } from '@heroicons/react/24/outline';
 
 interface AIMarketAnalysis {
@@ -33,7 +33,7 @@ interface AIMarketAnalysisProps {
 }
 
 // GNews country codes for location-specific news
-const countryCodeMap: Record<string, string> = {
+const COUNTRY_CODE_MAP: Record<string, string> = {
   'United States': 'us', 'Canada': 'ca', 'Mexico': 'mx',
   'United Kingdom': 'gb', 'Germany': 'de', 'France': 'fr', 'Italy': 'it', 'Spain': 'es',
   'Netherlands': 'nl', 'Switzerland': 'ch', 'Sweden': 'se', 'Norway': 'no', 'Denmark': 'dk',
@@ -55,123 +55,87 @@ const countryCodeMap: Record<string, string> = {
   'Russia': 'ru', 'Kazakhstan': 'kz', 'Georgia': 'ge',
 };
 
-export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({ 
-  industry: defaultIndustry, 
+// Master list of 50+ industries
+const MASTER_INDUSTRIES = [
+  'Aerospace & Defense', 'Agriculture & Farming', 'Artificial Intelligence', 'Automotive',
+  'Banking & Financial Services', 'Biotechnology', 'Blockchain & Cryptocurrency',
+  'Chemical Manufacturing', 'Clean Energy & Renewables', 'Cloud Computing',
+  'Construction & Engineering', 'Consumer Electronics', 'Consumer Goods & FMCG',
+  'Cybersecurity', 'Data Analytics & Big Data', 'E-Commerce & Retail', 'Education & EdTech',
+  'Electric Vehicles', 'Energy & Utilities', 'Entertainment & Media', 'Environmental Services',
+  'Fashion & Apparel', 'Financial Technology (FinTech)', 'Food & Beverage', 'Gaming & Esports',
+  'Government & Public Sector', 'Healthcare & Life Sciences', 'Hospitality & Tourism',
+  'Human Resources & Staffing', 'Industrial Automation', 'Information Technology',
+  'Insurance & InsurTech', 'Internet of Things (IoT)', 'Legal & LegalTech',
+  'Logistics & Supply Chain', 'Manufacturing', 'Marine & Shipping', 'Marketing & Advertising',
+  'Medical Devices', 'Mining & Metals', 'Nanotechnology', 'Non-Profit & Social Impact',
+  'Oil & Gas', 'Pharmaceuticals', 'PropTech & Real Estate', 'Quantum Computing',
+  'Robotics & Automation', 'SaaS & Enterprise Software', 'Semiconductors & Chips',
+  'Space & Satellite Technology', 'Sports & Fitness', 'Telecommunications',
+  'Transportation & Mobility', 'Travel & Aviation', 'Venture Capital & Private Equity',
+  'Virtual Reality & AR', 'Waste Management & Recycling', 'Water & Sanitation',
+  'Wearable Technology',
+];
+
+// Master list of countries
+const MASTER_LOCATIONS = [
+  'United States', 'Canada', 'Mexico',
+  'United Kingdom', 'Germany', 'France', 'Italy', 'Spain', 'Netherlands',
+  'Switzerland', 'Sweden', 'Norway', 'Denmark', 'Finland', 'Belgium',
+  'Austria', 'Ireland', 'Portugal', 'Poland', 'Czech Republic', 'Romania',
+  'Greece', 'Hungary', 'Ukraine', 'Estonia', 'Latvia', 'Lithuania',
+  'Slovakia', 'Slovenia', 'Croatia', 'Serbia', 'Bulgaria',
+  'China', 'Japan', 'India', 'South Korea', 'Australia', 'New Zealand',
+  'Singapore', 'Hong Kong', 'Taiwan', 'Indonesia', 'Malaysia', 'Thailand',
+  'Vietnam', 'Philippines', 'Bangladesh', 'Pakistan', 'Sri Lanka',
+  'Myanmar', 'Cambodia', 'Mongolia',
+  'United Arab Emirates', 'Saudi Arabia', 'Israel', 'Qatar', 'Kuwait',
+  'Bahrain', 'Oman', 'Jordan', 'Lebanon', 'Turkey', 'Iran', 'Iraq',
+  'South Africa', 'Nigeria', 'Kenya', 'Egypt', 'Morocco', 'Ghana',
+  'Ethiopia', 'Tanzania', 'Rwanda', 'Uganda', 'Senegal', 'Ivory Coast',
+  'Tunisia', 'Algeria', 'Mozambique', 'Cameroon', 'Zimbabwe',
+  'Brazil', 'Argentina', 'Chile', 'Colombia', 'Peru', 'Venezuela',
+  'Ecuador', 'Uruguay', 'Paraguay', 'Bolivia',
+  'Costa Rica', 'Panama', 'Guatemala', 'Dominican Republic', 'Jamaica',
+  'Trinidad and Tobago', 'Puerto Rico',
+  'Russia', 'Kazakhstan', 'Uzbekistan', 'Georgia', 'Armenia', 'Azerbaijan',
+];
+
+export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
+  industry: defaultIndustry,
   location: defaultLocation,
   industries = [],
+  locations = [],
 }) => {
-  // Master list of 50+ industries for comprehensive market analysis
-  const masterIndustries = [
-    'Aerospace & Defense',
-    'Agriculture & Farming',
-    'Artificial Intelligence',
-    'Automotive',
-    'Banking & Financial Services',
-    'Biotechnology',
-    'Blockchain & Cryptocurrency',
-    'Chemical Manufacturing',
-    'Clean Energy & Renewables',
-    'Cloud Computing',
-    'Construction & Engineering',
-    'Consumer Electronics',
-    'Consumer Goods & FMCG',
-    'Cybersecurity',
-    'Data Analytics & Big Data',
-    'E-Commerce & Retail',
-    'Education & EdTech',
-    'Electric Vehicles',
-    'Energy & Utilities',
-    'Entertainment & Media',
-    'Environmental Services',
-    'Fashion & Apparel',
-    'Financial Technology (FinTech)',
-    'Food & Beverage',
-    'Gaming & Esports',
-    'Government & Public Sector',
-    'Healthcare & Life Sciences',
-    'Hospitality & Tourism',
-    'Human Resources & Staffing',
-    'Industrial Automation',
-    'Information Technology',
-    'Insurance & InsurTech',
-    'Internet of Things (IoT)',
-    'Legal & LegalTech',
-    'Logistics & Supply Chain',
-    'Manufacturing',
-    'Marine & Shipping',
-    'Marketing & Advertising',
-    'Medical Devices',
-    'Mining & Metals',
-    'Nanotechnology',
-    'Non-Profit & Social Impact',
-    'Oil & Gas',
-    'Pharmaceuticals',
-    'PropTech & Real Estate',
-    'Quantum Computing',
-    'Robotics & Automation',
-    'SaaS & Enterprise Software',
-    'Semiconductors & Chips',
-    'Space & Satellite Technology',
-    'Sports & Fitness',
-    'Telecommunications',
-    'Transportation & Mobility',
-    'Travel & Aviation',
-    'Venture Capital & Private Equity',
-    'Virtual Reality & AR',
-    'Waste Management & Recycling',
-    'Water & Sanitation',
-    'Wearable Technology',
-  ];
+  // Merge passed-in industries/locations with master lists, deduplicate and sort
+  const allIndustries = [...new Set([...MASTER_INDUSTRIES, ...industries])].sort();
 
-  // Master list of 100+ countries/regions for global market analysis
-  const masterLocations = [
-    // North America
-    'United States', 'Canada', 'Mexico',
-    // Europe
-    'United Kingdom', 'Germany', 'France', 'Italy', 'Spain', 'Netherlands',
-    'Switzerland', 'Sweden', 'Norway', 'Denmark', 'Finland', 'Belgium',
-    'Austria', 'Ireland', 'Portugal', 'Poland', 'Czech Republic', 'Romania',
-    'Greece', 'Hungary', 'Ukraine', 'Luxembourg', 'Iceland', 'Estonia',
-    'Latvia', 'Lithuania', 'Slovakia', 'Slovenia', 'Croatia', 'Serbia',
-    'Bulgaria',
-    // Asia-Pacific
-    'China', 'Japan', 'India', 'South Korea', 'Australia', 'New Zealand',
-    'Singapore', 'Hong Kong', 'Taiwan', 'Indonesia', 'Malaysia', 'Thailand',
-    'Vietnam', 'Philippines', 'Bangladesh', 'Pakistan', 'Sri Lanka',
-    'Myanmar', 'Cambodia', 'Mongolia',
-    // Middle East
-    'United Arab Emirates', 'Saudi Arabia', 'Israel', 'Qatar', 'Kuwait',
-    'Bahrain', 'Oman', 'Jordan', 'Lebanon', 'Turkey', 'Iran', 'Iraq',
-    // Africa
-    'South Africa', 'Nigeria', 'Kenya', 'Egypt', 'Morocco', 'Ghana',
-    'Ethiopia', 'Tanzania', 'Rwanda', 'Uganda', 'Senegal', 'Ivory Coast',
-    'Tunisia', 'Algeria', 'Mozambique', 'Cameroon', 'Zimbabwe',
-    // South America
-    'Brazil', 'Argentina', 'Chile', 'Colombia', 'Peru', 'Venezuela',
-    'Ecuador', 'Uruguay', 'Paraguay', 'Bolivia',
-    // Central America & Caribbean
-    'Costa Rica', 'Panama', 'Guatemala', 'Dominican Republic', 'Jamaica',
-    'Trinidad and Tobago', 'Puerto Rico',
-    // Other
-    'Russia', 'Kazakhstan', 'Uzbekistan', 'Georgia', 'Armenia',
-    'Azerbaijan',
-  ];
+  // Use passed-in locations if they look like countries, merged with master list
+  const passedCountries = locations.filter(loc =>
+    MASTER_LOCATIONS.some(country => loc.toLowerCase().includes(country.toLowerCase()))
+  );
+  const allLocations = [...new Set([...MASTER_LOCATIONS, ...passedCountries])].sort();
 
-  // Merge lead industries with master list, deduplicate and sort
-  const allIndustries = [...new Set([...masterIndustries, ...industries])].sort();
-  // Only use master countries list; no city-level lead locations.
-  const allLocations = masterLocations.sort();
-
-  // Resolve default location to a country from the master list
-  const resolvedDefault = allLocations.find(c => defaultLocation.toLowerCase().includes(c.toLowerCase())) 
-    || allLocations.find(c => c === 'United States') 
-    || allLocations[0];
+  // Resolve default location to a master-list country
+  const resolveLocation = (loc: string): string => {
+    // Exact match first
+    const exact = allLocations.find(c => c.toLowerCase() === loc.toLowerCase());
+    if (exact) return exact;
+    // Partial match (city contains country name or vice versa)
+    const partial = allLocations.find(c => loc.toLowerCase().includes(c.toLowerCase()));
+    if (partial) return partial;
+    // Default to United States
+    return 'United States';
+  };
 
   const [analysis, setAnalysis] = useState<AIMarketAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedIndustry, setSelectedIndustry] = useState(defaultIndustry);
-  const [selectedLocation, setSelectedLocation] = useState(resolvedDefault);
+  const [selectedIndustry, setSelectedIndustry] = useState(
+    allIndustries.find(i => i.toLowerCase().includes(defaultIndustry.toLowerCase())) ||
+    defaultIndustry
+  );
+  const [selectedLocation, setSelectedLocation] = useState(resolveLocation(defaultLocation));
 
   const loadMarketAnalysis = useCallback(async () => {
     try {
@@ -192,18 +156,24 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
   }, [loadMarketAnalysis]);
 
   const handleRefresh = () => {
-    // Clear cache for this query by forcing a new analysis
     aiService.clearMarketCache(selectedIndustry, selectedLocation);
     loadMarketAnalysis();
   };
+
+  // Derive GNews country code from selected location
+  const newsCountryCode = COUNTRY_CODE_MAP[selectedLocation];
 
   if (loading) {
     return (
       <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
         <div className="flex flex-col items-center justify-center py-12">
           <LoadingSpinner size="lg" />
-          <span className="mt-4 text-white font-medium">Analyzing {selectedIndustry} market...</span>
-          <span className="mt-1 text-sm text-gray-400">Gathering trends, competitors, and opportunities</span>
+          <span className="mt-4 text-white font-medium">
+            Analyzing {selectedIndustry} market...
+          </span>
+          <span className="mt-1 text-sm text-gray-400">
+            Gathering trends, competitors, and opportunities
+          </span>
         </div>
       </div>
     );
@@ -239,25 +209,23 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
           AI Market Analysis
         </h3>
         <div className="flex items-center gap-3 flex-wrap">
-          {/* Industry Selector with search */}
+          {/* Industry Selector */}
           <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-400">Industry:</label>
-            <div className="relative">
-              <select
-                value={selectedIndustry}
-                onChange={(e) => setSelectedIndustry(e.target.value)}
-                className="bg-[#161B22] border border-gray-600 text-white text-sm rounded-md px-2 py-1 pr-7 focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[220px]"
-              >
-                {allIndustries.map(ind => (
-                  <option key={ind} value={ind}>{ind}</option>
-                ))}
-              </select>
-            </div>
-            <span className="text-[10px] text-gray-500">({allIndustries.length} industries)</span>
+            <label className="text-xs text-gray-400 whitespace-nowrap">Industry:</label>
+            <select
+              value={selectedIndustry}
+              onChange={(e) => setSelectedIndustry(e.target.value)}
+              className="bg-[#161B22] border border-gray-600 text-white text-sm rounded-md px-2 py-1 pr-7 focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[220px]"
+            >
+              {allIndustries.map(ind => (
+                <option key={ind} value={ind}>{ind}</option>
+              ))}
+            </select>
+            <span className="text-[10px] text-gray-500">({allIndustries.length})</span>
           </div>
           {/* Location Selector */}
           <div className="flex items-center gap-2">
-            <label className="text-xs text-gray-400">Location:</label>
+            <label className="text-xs text-gray-400 whitespace-nowrap">Location:</label>
             <select
               value={selectedLocation}
               onChange={(e) => setSelectedLocation(e.target.value)}
@@ -267,7 +235,7 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
                 <option key={loc} value={loc}>{loc}</option>
               ))}
             </select>
-            <span className="text-[10px] text-gray-500">({allLocations.length} locations)</span>
+            <span className="text-[10px] text-gray-500">({allLocations.length})</span>
           </div>
           <button
             onClick={handleRefresh}
@@ -285,21 +253,31 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
           <div className="bg-[#161B22] rounded-lg p-4 border border-gray-700 text-center">
             <GlobeAltIcon className="h-6 w-6 text-blue-400 mx-auto mb-2" />
             <div className="text-xs text-gray-400 mb-1">Market Size</div>
-            <div className="text-lg font-semibold text-white">{analysis.marketOverview.marketSize}</div>
+            <div className="text-lg font-semibold text-white">
+              {analysis.marketOverview.marketSize}
+            </div>
           </div>
           <div className="bg-[#161B22] rounded-lg p-4 border border-gray-700 text-center">
             <ArrowTrendingUpIcon className="h-6 w-6 text-green-400 mx-auto mb-2" />
             <div className="text-xs text-gray-400 mb-1">Growth Rate</div>
-            <div className="text-lg font-semibold text-green-400">{analysis.marketOverview.growthRate}</div>
+            <div className="text-lg font-semibold text-green-400">
+              {analysis.marketOverview.growthRate}
+            </div>
           </div>
           <div className="bg-[#161B22] rounded-lg p-4 border border-gray-700 text-center">
             <ChartBarIcon className="h-6 w-6 text-yellow-400 mx-auto mb-2" />
             <div className="text-xs text-gray-400 mb-1">Market Sentiment</div>
             <div className={`text-lg font-semibold ${
-              analysis.marketOverview.sentiment.toLowerCase().includes('bullish') || analysis.marketOverview.sentiment.toLowerCase().includes('positive') ? 'text-green-400' :
-              analysis.marketOverview.sentiment.toLowerCase().includes('bearish') || analysis.marketOverview.sentiment.toLowerCase().includes('negative') ? 'text-red-400' :
-              'text-yellow-400'
-            }`}>{analysis.marketOverview.sentiment}</div>
+              analysis.marketOverview.sentiment.toLowerCase().includes('bullish') ||
+              analysis.marketOverview.sentiment.toLowerCase().includes('positive')
+                ? 'text-green-400'
+                : analysis.marketOverview.sentiment.toLowerCase().includes('bearish') ||
+                  analysis.marketOverview.sentiment.toLowerCase().includes('negative')
+                ? 'text-red-400'
+                : 'text-yellow-400'
+            }`}>
+              {analysis.marketOverview.sentiment}
+            </div>
           </div>
         </div>
       )}
@@ -314,7 +292,7 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
           <div className="space-y-3">
             {analysis.industryTrends.map((trend, index) => (
               <div key={index} className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="w-2 h-2 bg-green-400 rounded-full mt-2 flex-shrink-0" />
                 <p className="text-sm text-gray-300">{trend}</p>
               </div>
             ))}
@@ -330,7 +308,7 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
           <div className="space-y-3">
             {analysis.competitorInsights.map((insight, index) => (
               <div key={index} className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="w-2 h-2 bg-blue-400 rounded-full mt-2 flex-shrink-0" />
                 <p className="text-sm text-gray-300">{insight}</p>
               </div>
             ))}
@@ -346,7 +324,7 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
           <div className="space-y-3">
             {analysis.marketOpportunities.map((opportunity, index) => (
               <div key={index} className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="w-2 h-2 bg-yellow-400 rounded-full mt-2 flex-shrink-0" />
                 <p className="text-sm text-gray-300">{opportunity}</p>
               </div>
             ))}
@@ -362,7 +340,7 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
           <div className="space-y-3">
             {analysis.riskFactors.map((risk, index) => (
               <div key={index} className="flex items-start space-x-3">
-                <div className="w-2 h-2 bg-red-400 rounded-full mt-2 flex-shrink-0"></div>
+                <div className="w-2 h-2 bg-red-400 rounded-full mt-2 flex-shrink-0" />
                 <p className="text-sm text-gray-300">{risk}</p>
               </div>
             ))}
@@ -378,7 +356,10 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {analysis.recommendations.map((recommendation, index) => (
-            <div key={index} className="p-3 bg-purple-600/10 border border-purple-600/30 rounded-lg">
+            <div
+              key={index}
+              className="p-3 bg-purple-600/10 border border-purple-600/30 rounded-lg"
+            >
               <p className="text-sm text-purple-200">{recommendation}</p>
             </div>
           ))}
@@ -387,11 +368,11 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
 
       {/* Related News Articles */}
       <div className="mt-6">
-        <NewsFeed 
-          query={selectedIndustry} 
-          title={`${selectedIndustry} News - ${selectedLocation}`} 
+        <NewsFeed
+          query={selectedIndustry}
+          title={`${selectedIndustry} News — ${selectedLocation}`}
           maxResults={5}
-          country={countryCodeMap[selectedLocation]}
+          country={newsCountryCode}
         />
       </div>
     </div>

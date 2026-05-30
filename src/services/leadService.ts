@@ -11,7 +11,7 @@ export const exportLeadsToCSV = (leads: Lead[]): string => {
   return exportRealTimeLeads(leads, 'csv');
 };
 
-// Get real-time leads for initial load
+// Get real-time leads for initial load (includes seed data for first-time users)
 export const getInitialLeads = (): Lead[] => {
   return getRealTimeLeads();
 };

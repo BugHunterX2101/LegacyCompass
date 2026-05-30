@@ -1,8 +1,11 @@
 import { Lead } from '../types';
 import { scrapeLeadsWithRealAI, enrichLeadWithRealAIData } from './realAIService';
+import { generateSeedLeads } from '../data/seedData';
 
 const USE_REAL_AI = true;
 const STORAGE_KEY = 'legacycompass_leads';
+const SEED_VERSION_KEY = 'legacycompass_seed_version';
+const CURRENT_SEED_VERSION = '1.0';
 
 // Real-time lead service with localStorage persistence
 class RealTimeLeadService {
@@ -16,17 +19,24 @@ class RealTimeLeadService {
   private loadFromLocalStorage() {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
+      const seedVersion = localStorage.getItem(SEED_VERSION_KEY);
+
+      if (stored && seedVersion === CURRENT_SEED_VERSION) {
         const parsed = JSON.parse(stored);
         this.leads = parsed.map((lead: Lead) => ({
           ...lead,
           createdAt: new Date(lead.createdAt),
           updatedAt: new Date(lead.updatedAt),
         }));
+      } else {
+        // First-time load or outdated seed: use seed data
+        this.leads = generateSeedLeads();
+        this.saveToLocalStorage();
+        localStorage.setItem(SEED_VERSION_KEY, CURRENT_SEED_VERSION);
       }
     } catch (e) {
       console.error('Failed to load leads from localStorage:', e);
-      this.leads = [];
+      this.leads = generateSeedLeads();
     }
   }
 
@@ -55,9 +65,12 @@ class RealTimeLeadService {
   }
 
   addLead(lead: Lead): void {
-    this.leads.unshift(lead);
-    this.saveToLocalStorage();
-    this.notifyListeners();
+    // Prevent duplicates by id
+    if (!this.leads.find(l => l.id === lead.id)) {
+      this.leads.unshift(lead);
+      this.saveToLocalStorage();
+      this.notifyListeners();
+    }
   }
 
   updateLead(id: string, updates: Partial<Lead>): void {
@@ -106,8 +119,8 @@ export const deleteRealTimeLead = (id: string): void => {
 
 // Enhanced scraping function
 export const scrapeRealTimeLeads = async (
-  source: string, 
-  query: string, 
+  source: string,
+  query: string,
   maxResults: number = 50
 ): Promise<Lead[]> => {
   if (USE_REAL_AI) {
@@ -144,33 +157,29 @@ export const scrapeRealTimeLeads = async (
 
   // Fallback: filter existing leads
   await new Promise(resolve => setTimeout(resolve, 2000));
-  
+
   const allLeads = getRealTimeLeads();
   const queryLower = query.toLowerCase();
-  
-  // Filter leads based on query
-  let filteredLeads = allLeads.filter(lead => 
+
+  let filteredLeads = allLeads.filter(lead =>
     lead.companyName.toLowerCase().includes(queryLower) ||
     lead.industry.toLowerCase().includes(queryLower) ||
     lead.location.toLowerCase().includes(queryLower)
   );
-  
-  // If no matches, return random leads
+
   if (filteredLeads.length === 0) {
     filteredLeads = allLeads.sort(() => 0.5 - Math.random());
   }
-  
-  // Limit results
+
   const results = filteredLeads.slice(0, maxResults);
-  
-  // Add source tag and mark as scraped
+
   return results.map(lead => ({
     ...lead,
     id: `scraped-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
     source: source,
-    tags: [...lead.tags, 'scraped', source],
+    tags: [...(lead.tags || []), 'scraped', source],
     createdAt: new Date(),
-    updatedAt: new Date()
+    updatedAt: new Date(),
   }));
 };
 
@@ -262,7 +271,7 @@ export const enrichLeadWithRealData = async (lead: Lead): Promise<Lead> => {
           twitter: isValidField(aiData.twitterHandle) ? (aiData.twitterHandle as string) : lead.socialMedia?.twitter,
           facebook: lead.socialMedia?.facebook,
         },
-        tags: Array.isArray(aiData.tags) && aiData.tags.length > 0 ? (aiData.tags as string[]) : lead.tags,
+        tags: Array.isArray(aiData.tags) && (aiData.tags as string[]).length > 0 ? (aiData.tags as string[]) : lead.tags,
         updatedAt: new Date(),
       };
 
@@ -281,41 +290,38 @@ export const enrichLeadWithRealData = async (lead: Lead): Promise<Lead> => {
 
   // Fallback: template-based enrichment
   await new Promise(resolve => setTimeout(resolve, 1000));
-  
+
   const enrichedLead = { ...lead };
-  
-  // Add missing email if not present
+
   if (!enrichedLead.email && enrichedLead.contactPerson) {
-    const [firstName, lastName] = enrichedLead.contactPerson.split(' ');
+    const parts = enrichedLead.contactPerson.split(' ');
+    const firstName = parts[0]?.toLowerCase() || 'contact';
+    const lastName = parts[1]?.toLowerCase() || 'info';
     const domain = enrichedLead.companyName.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 15);
-    enrichedLead.email = `${firstName?.toLowerCase()}.${lastName?.toLowerCase()}@${domain}.com`;
+    enrichedLead.email = `${firstName}.${lastName}@${domain}.com`;
   }
-  
-  // Add phone if missing
+
   if (!enrichedLead.phone) {
     enrichedLead.phone = 'Contact via website';
   }
-  
-  // Add LinkedIn profile if missing
+
   if (!enrichedLead.linkedinProfile && enrichedLead.contactPerson) {
-    const [firstName, lastName] = enrichedLead.contactPerson.split(' ');
-    enrichedLead.linkedinProfile = `https://linkedin.com/in/${firstName?.toLowerCase()}-${lastName?.toLowerCase()}`;
+    const parts = enrichedLead.contactPerson.split(' ');
+    const firstName = parts[0]?.toLowerCase() || 'contact';
+    const lastName = parts[1]?.toLowerCase() || '';
+    enrichedLead.linkedinProfile = `https://linkedin.com/in/${firstName}-${lastName}`;
   }
-  
-  // Add company description if missing
+
   if (!enrichedLead.description) {
     enrichedLead.description = `${enrichedLead.companyName} is a company in the ${enrichedLead.industry} industry.`;
   }
-  
-  // Update timestamp
+
   enrichedLead.updatedAt = new Date();
-  
-  // Recalculate score based on fallback enrichment
   enrichedLead.score = calculateLeadScore(enrichedLead);
-  
-  // Persist fallback enrichment too
+
+  // Persist fallback enrichment
   realTimeLeadService.updateLead(lead.id, enrichedLead);
-  
+
   return enrichedLead;
 };
 
@@ -324,13 +330,12 @@ export const exportRealTimeLeads = (leads: Lead[], format: 'csv' | 'json'): stri
   if (format === 'json') {
     return JSON.stringify(leads, null, 2);
   }
-  
-  // CSV export
+
   const headers = [
     'Company Name', 'Contact Person', 'Title', 'Email', 'Phone', 'LinkedIn Profile',
-    'Website', 'Location', 'Industry', 'Employee Count', 'Revenue', 'Score', 'Status'
+    'Website', 'Location', 'Industry', 'Employee Count', 'Revenue', 'Score', 'Status',
   ];
-  
+
   const csvContent = [
     headers.join(','),
     ...leads.map(lead => [
@@ -346,9 +351,9 @@ export const exportRealTimeLeads = (leads: Lead[], format: 'csv' | 'json'): stri
       lead.employeeCount,
       lead.revenue || 0,
       lead.score,
-      `"${lead.status}"`
-    ].join(','))
+      `"${lead.status}"`,
+    ].join(',')),
   ].join('\n');
-  
+
   return csvContent;
 };

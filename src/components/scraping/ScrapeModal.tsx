@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { 
+import {
   XMarkIcon,
   MagnifyingGlassIcon,
   ExclamationTriangleIcon,
   CheckCircleIcon,
   BriefcaseIcon,
   RocketLaunchIcon,
-  PhoneIcon,
-  GlobeAltIcon
+  BuildingOfficeIcon,
+  GlobeAltIcon,
 } from '@heroicons/react/24/outline';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { scrapeLeadsFromNews } from '../../services/scrapingService';
@@ -35,29 +35,29 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
       name: 'Business News',
       Icon: BriefcaseIcon,
       description: 'Discover companies from real-time business news and press releases',
-      estimatedTime: '10-30 seconds'
+      estimatedTime: '10-30 seconds',
     },
     {
       id: 'funding',
       name: 'Startup & Funding',
       Icon: RocketLaunchIcon,
       description: 'Find startups from funding announcements and venture capital news',
-      estimatedTime: '10-30 seconds'
+      estimatedTime: '10-30 seconds',
     },
     {
       id: 'industry',
       name: 'Industry Reports',
-      Icon: PhoneIcon,
+      Icon: BuildingOfficeIcon,
       description: 'Extract companies from industry analysis and market reports',
-      estimatedTime: '10-30 seconds'
+      estimatedTime: '10-30 seconds',
     },
     {
       id: 'global',
       name: 'Global Markets',
       Icon: GlobeAltIcon,
       description: 'Find companies from international business and trade news',
-      estimatedTime: '10-30 seconds'
-    }
+      estimatedTime: '10-30 seconds',
+    },
   ];
 
   const searchExamples = [
@@ -65,7 +65,7 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
     'Healthcare technology',
     'Fintech funding',
     'SaaS companies',
-    'Electric vehicle manufacturers'
+    'Electric vehicle manufacturers',
   ];
 
   const handleScrape = async () => {
@@ -137,7 +137,7 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
                     }`}
                   >
                     <div className="flex items-center space-x-3 mb-2">
-                      <source.Icon className="h-6 w-6 text-gray-300" />
+                      <source.Icon className="h-6 w-6 text-gray-300 flex-shrink-0" />
                       <div>
                         <h4 className="font-medium text-white">{source.name}</h4>
                         <p className="text-xs text-gray-400">{source.estimatedTime}</p>
@@ -160,11 +160,12 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && !scraping && handleScrape()}
                   placeholder="Enter your search criteria..."
                   className="w-full pl-10 pr-4 py-3 bg-[#0D1117] border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
-              
+
               <div className="mt-2">
                 <p className="text-xs text-gray-500 mb-2">Examples:</p>
                 <div className="flex flex-wrap gap-2">
@@ -203,8 +204,8 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
             </div>
 
             {error && (
-              <div className="p-3 bg-red-900/20 border border-red-700 rounded flex items-center">
-                <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mr-2" />
+              <div className="p-3 bg-red-900/20 border border-red-700 rounded flex items-start space-x-2">
+                <ExclamationTriangleIcon className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
                 <p className="text-sm text-red-400">{error}</p>
               </div>
             )}
@@ -219,7 +220,8 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
               </button>
               <button
                 onClick={handleScrape}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                disabled={!searchQuery.trim()}
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Start Scraping
               </button>
@@ -231,23 +233,25 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
             <div className="mb-6">
               <LoadingSpinner size="lg" />
             </div>
-            
+
             <h4 className="text-lg font-medium text-white mb-2">Scraping in Progress</h4>
-            <p className="text-gray-400 mb-6">{currentStep}</p>
-            
+            <p className="text-gray-400 mb-6 min-h-[1.5rem]">{currentStep}</p>
+
             <div className="w-full bg-gray-700 rounded-full h-3 mb-4">
-              <div 
+              <div
                 className="bg-gradient-to-r from-blue-500 to-purple-500 h-3 rounded-full transition-all duration-500"
                 style={{ width: `${progress}%` }}
               />
             </div>
-            
+
             <p className="text-sm text-gray-400">{progress}% complete</p>
-            
+
             <div className="mt-6 p-4 bg-blue-600/10 border border-blue-600/30 rounded-lg">
               <div className="flex items-center justify-center space-x-2 text-blue-300">
                 <CheckCircleIcon className="h-5 w-5" />
-                <span className="text-sm">Scraping {maxResults} leads from {sources.find(s => s.id === selectedSource)?.name}</span>
+                <span className="text-sm">
+                  Scraping {maxResults} leads from {sources.find(s => s.id === selectedSource)?.name}
+                </span>
               </div>
             </div>
           </div>

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { SearchFilter } from '../../types';
 import { SearchDropdown } from '../common/SearchDropdown';
 import { MagnifyingGlassIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
@@ -16,7 +16,7 @@ const filterFields = [
   { value: 'revenue', label: 'Revenue' },
   { value: 'score', label: 'Score' },
   { value: 'status', label: 'Status' },
-  { value: 'contactPerson', label: 'Contact Person' }
+  { value: 'contactPerson', label: 'Contact Person' },
 ];
 
 const operators = [
@@ -24,19 +24,19 @@ const operators = [
   { value: 'contains', label: 'Contains' },
   { value: 'greater', label: 'Greater than' },
   { value: 'less', label: 'Less than' },
-  { value: 'between', label: 'Between' }
+  { value: 'between', label: 'Between' },
 ];
 
 const industries = [
   'Technology', 'Healthcare', 'Finance', 'Manufacturing', 'Retail',
   'Education', 'Real Estate', 'Consulting', 'Marketing', 'Legal',
-  'Automotive', 'Energy', 'Telecommunications', 'Media', 'Transportation'
+  'Automotive', 'Energy', 'Telecommunications', 'Media', 'Transportation',
 ];
 
 const locations = [
   'New York, NY', 'San Francisco, CA', 'Los Angeles, CA', 'Chicago, IL',
   'Boston, MA', 'Seattle, WA', 'Austin, TX', 'Denver, CO', 'Miami, FL',
-  'Atlanta, GA', 'Dallas, TX', 'Phoenix, AZ', 'Philadelphia, PA', 'Detroit, MI'
+  'Atlanta, GA', 'Dallas, TX', 'Phoenix, AZ', 'Philadelphia, PA', 'Detroit, MI',
 ];
 
 const statuses = ['new', 'contacted', 'qualified', 'converted', 'rejected'];
@@ -46,43 +46,44 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
   const [filters, setFilters] = useState<SearchFilter[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  useEffect(() => {
-    onSearch(filters, query);
-    // Calculate results count based on current filters and query
-    // This would normally be done by the parent component
-  }, [filters, query, onSearch, onResultsCount]);
+  // Use refs to avoid stale closure issues without adding callbacks to dep array
+  const onSearchRef = useRef(onSearch);
+  const onResultsCountRef = useRef(onResultsCount);
+  useEffect(() => { onSearchRef.current = onSearch; }, [onSearch]);
+  useEffect(() => { onResultsCountRef.current = onResultsCount; }, [onResultsCount]);
 
-  const addFilter = () => {
+  // Fire search whenever filters or query change - using refs to avoid infinite loops
+  useEffect(() => {
+    onSearchRef.current(filters, query);
+  }, [filters, query]);
+
+  const addFilter = useCallback(() => {
     const newFilter: SearchFilter = {
       field: 'companyName',
       operator: 'contains',
       value: '',
-      label: 'Company Name contains'
+      label: 'Company Name contains',
     };
-    setFilters([...filters, newFilter]);
+    setFilters(prev => [...prev, newFilter]);
     setIsExpanded(true);
-  };
+  }, []);
 
-  const updateFilter = (index: number, updates: Partial<SearchFilter>) => {
-    const updatedFilters = filters.map((filter, i) => {
-      if (i === index) {
-        const updatedFilter = { ...filter, ...updates };
-        // Update label when field or operator changes
-        if (updates.field || updates.operator) {
-          const fieldLabel = filterFields.find(f => f.value === updatedFilter.field)?.label || updatedFilter.field;
-          const operatorLabel = operators.find(o => o.value === updatedFilter.operator)?.label || updatedFilter.operator;
-          updatedFilter.label = `${fieldLabel} ${operatorLabel.toLowerCase()}`;
-        }
-        return updatedFilter;
+  const updateFilter = useCallback((index: number, updates: Partial<SearchFilter>) => {
+    setFilters(prev => prev.map((filter, i) => {
+      if (i !== index) return filter;
+      const updatedFilter = { ...filter, ...updates };
+      if (updates.field || updates.operator) {
+        const fieldLabel = filterFields.find(f => f.value === updatedFilter.field)?.label || updatedFilter.field;
+        const operatorLabel = operators.find(o => o.value === updatedFilter.operator)?.label || updatedFilter.operator;
+        updatedFilter.label = `${fieldLabel} ${operatorLabel.toLowerCase()}`;
       }
-      return filter;
-    });
-    setFilters(updatedFilters);
-  };
+      return updatedFilter;
+    }));
+  }, []);
 
-  const removeFilter = (index: number) => {
-    setFilters(filters.filter((_, i) => i !== index));
-  };
+  const removeFilter = useCallback((index: number) => {
+    setFilters(prev => prev.filter((_, i) => i !== index));
+  }, []);
 
   const getSuggestions = (field: string): string[] => {
     switch (field) {
@@ -104,27 +105,27 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
     }
   };
 
-  const clearAllFilters = () => {
+  const clearAllFilters = useCallback(() => {
     setFilters([]);
     setQuery('');
-  };
+  }, []);
 
   return (
     <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-white">Search & Filter</h3>
+        <h3 className="text-lg font-semibold text-white">Search &amp; Filter</h3>
         <div className="flex items-center space-x-2">
           {(filters.length > 0 || query) && (
             <button
               onClick={clearAllFilters}
-              className="text-gray-400 hover:text-white text-sm"
+              className="text-gray-400 hover:text-white text-sm transition-colors"
             >
               Clear All
             </button>
           )}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="text-blue-400 hover:text-blue-300 text-sm"
+            className="text-blue-400 hover:text-blue-300 text-sm transition-colors"
           >
             {isExpanded ? 'Simple Search' : 'Advanced Search'}
           </button>
@@ -141,6 +142,14 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
           placeholder="Search companies, industries, locations..."
           className="w-full pl-10 pr-4 py-3 bg-[#0D1117] border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
+        {query && (
+          <button
+            onClick={() => setQuery('')}
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+          >
+            <XMarkIcon className="h-4 w-4" />
+          </button>
+        )}
       </div>
 
       {/* Advanced Filters */}
@@ -150,7 +159,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
             <h4 className="text-sm font-medium text-gray-300">Advanced Filters</h4>
             <button
               onClick={addFilter}
-              className="flex items-center space-x-1 text-blue-400 hover:text-blue-300 text-sm"
+              className="flex items-center space-x-1 text-blue-400 hover:text-blue-300 text-sm transition-colors"
             >
               <PlusIcon className="h-4 w-4" />
               <span>Add Filter</span>
@@ -158,7 +167,10 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
           </div>
 
           {filters.map((filter, index) => (
-            <div key={index} className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 bg-[#161B22] rounded-lg border border-gray-700">
+            <div
+              key={index}
+              className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 bg-[#161B22] rounded-lg border border-gray-700"
+            >
               {/* Field Selection */}
               <div>
                 <label className="block text-xs font-medium text-gray-400 mb-1">Field</label>
@@ -168,9 +180,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
                   className="w-full px-3 py-2 bg-[#0D1117] border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {filterFields.map(field => (
-                    <option key={field.value} value={field.value}>
-                      {field.label}
-                    </option>
+                    <option key={field.value} value={field.value}>{field.label}</option>
                   ))}
                 </select>
               </div>
@@ -184,9 +194,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
                   className="w-full px-3 py-2 bg-[#0D1117] border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   {operators.map(op => (
-                    <option key={op.value} value={op.value}>
-                      {op.label}
-                    </option>
+                    <option key={op.value} value={op.value}>{op.label}</option>
                   ))}
                 </select>
               </div>
@@ -207,7 +215,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
                     type={getInputType(filter.field)}
                     value={String(filter.value)}
                     onChange={(e) => updateFilter(index, { value: e.target.value })}
-                    placeholder="Enter value..."
+                    placeholder={filter.operator === 'between' ? 'min,max' : 'Enter value...'}
                     className="w-full px-3 py-2 bg-[#0D1117] border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
                 )}
@@ -217,7 +225,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
               <div className="flex items-end">
                 <button
                   onClick={() => removeFilter(index)}
-                  className="p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-md"
+                  className="p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-md transition-colors"
                   title="Remove filter"
                 >
                   <XMarkIcon className="h-4 w-4" />
@@ -229,7 +237,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
           {filters.length === 0 && (
             <div className="text-center py-8 text-gray-500">
               <p>No filters added yet.</p>
-              <p className="text-sm">Click "Add Filter" to create advanced search criteria.</p>
+              <p className="text-sm mt-1">Click &ldquo;Add Filter&rdquo; to create advanced search criteria.</p>
             </div>
           )}
         </div>
@@ -248,7 +256,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
                 {filter.label}: {String(filter.value)}
                 <button
                   onClick={() => removeFilter(index)}
-                  className="ml-2 text-blue-300 hover:text-white"
+                  className="ml-2 text-blue-300 hover:text-white transition-colors"
                 >
                   <XMarkIcon className="h-3 w-3" />
                 </button>

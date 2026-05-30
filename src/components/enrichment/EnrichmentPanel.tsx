@@ -3,11 +3,11 @@ import { Lead } from '../../types';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 import { ScoreCircle } from '../common/ScoreCircle';
 import { enrichLeadWithRealData } from '../../services/realTimeLeadService';
-import { 
-  SparklesIcon, 
-  CheckCircleIcon, 
+import {
+  SparklesIcon,
+  CheckCircleIcon,
   ExclamationTriangleIcon,
-  InformationCircleIcon
+  InformationCircleIcon,
 } from '@heroicons/react/24/outline';
 
 interface EnrichmentPanelProps {
@@ -15,15 +15,16 @@ interface EnrichmentPanelProps {
   onEnrich: (leadId: string, enrichedLead: Lead) => void;
 }
 
+type EnrichmentStatusValue = 'idle' | 'enriching' | 'success' | 'error';
+
 interface EnrichmentStatus {
-  [leadId: string]: 'idle' | 'enriching' | 'success' | 'error';
+  [leadId: string]: EnrichmentStatusValue;
 }
 
 interface EnrichmentResult {
   leadId: string;
   companyName: string;
   fieldsEnriched: string[];
-  enrichedLead: Lead;
 }
 
 export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnrich }) => {
@@ -34,8 +35,6 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
 
   const getEnrichmentScore = (lead: Lead): number => {
     let score = 0;
-    const maxScore = 100;
-    
     if (lead.email) score += 20;
     if (lead.phone) score += 20;
     if (lead.contactPerson) score += 15;
@@ -44,59 +43,67 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
     if (lead.socialMedia?.twitter) score += 5;
     if (lead.socialMedia?.facebook) score += 5;
     if (lead.description) score += 10;
-    
-    return Math.min(score, maxScore);
+    return Math.min(score, 100);
   };
 
   const getEnrichmentNeeds = (lead: Lead): string[] => {
     const needs: string[] = [];
-    
     if (!lead.email) needs.push('Email address');
     if (!lead.phone) needs.push('Phone number');
     if (!lead.contactPerson) needs.push('Contact person');
     if (!lead.title) needs.push('Job title');
     if (!lead.socialMedia?.linkedin) needs.push('LinkedIn profile');
     if (!lead.description) needs.push('Company description');
-    
     return needs;
   };
 
   const handleEnrichSingle = async (leadId: string) => {
     setEnrichmentStatus(prev => ({ ...prev, [leadId]: 'enriching' }));
-    
+
     try {
       const lead = leads.find(l => l.id === leadId);
       if (!lead) throw new Error('Lead not found');
-      
+
       const enrichedLead = await enrichLeadWithRealData(lead);
-      
+
       // Track which fields were enriched
       const fieldsEnriched: string[] = [];
-      if (!lead.contactPerson && enrichedLead.contactPerson) fieldsEnriched.push(`Contact: ${enrichedLead.contactPerson}`);
-      if (!lead.title && enrichedLead.title) fieldsEnriched.push(`Title: ${enrichedLead.title}`);
-      if (!lead.email && enrichedLead.email) fieldsEnriched.push(`Email: ${enrichedLead.email}`);
-      if (!lead.phone && enrichedLead.phone) fieldsEnriched.push(`Phone: ${enrichedLead.phone}`);
-      if (!lead.website && enrichedLead.website) fieldsEnriched.push(`Website: ${enrichedLead.website}`);
-      if (!lead.socialMedia?.linkedin && enrichedLead.socialMedia?.linkedin) fieldsEnriched.push(`LinkedIn: ${enrichedLead.socialMedia.linkedin}`);
-      if (!lead.socialMedia?.twitter && enrichedLead.socialMedia?.twitter) fieldsEnriched.push(`Twitter: ${enrichedLead.socialMedia.twitter}`);
-      if (!lead.description && enrichedLead.description) fieldsEnriched.push('Description added');
-      if ((!lead.revenue || lead.revenue === 0) && enrichedLead.revenue && enrichedLead.revenue > 0) fieldsEnriched.push(`Revenue: $${enrichedLead.revenue.toLocaleString()}`);
-      if ((!lead.employeeCount || lead.employeeCount <= 1) && enrichedLead.employeeCount && enrichedLead.employeeCount > 1) fieldsEnriched.push(`Employees: ${enrichedLead.employeeCount.toLocaleString()}`);
+      if (!lead.contactPerson && enrichedLead.contactPerson)
+        fieldsEnriched.push(`Contact: ${enrichedLead.contactPerson}`);
+      if (!lead.title && enrichedLead.title)
+        fieldsEnriched.push(`Title: ${enrichedLead.title}`);
+      if (!lead.email && enrichedLead.email)
+        fieldsEnriched.push(`Email: ${enrichedLead.email}`);
+      if (!lead.phone && enrichedLead.phone)
+        fieldsEnriched.push(`Phone: ${enrichedLead.phone}`);
+      if (!lead.website && enrichedLead.website)
+        fieldsEnriched.push(`Website: ${enrichedLead.website}`);
+      if (!lead.socialMedia?.linkedin && enrichedLead.socialMedia?.linkedin)
+        fieldsEnriched.push(`LinkedIn: ${enrichedLead.socialMedia.linkedin}`);
+      if (!lead.socialMedia?.twitter && enrichedLead.socialMedia?.twitter)
+        fieldsEnriched.push(`Twitter: ${enrichedLead.socialMedia.twitter}`);
+      if (!lead.description && enrichedLead.description)
+        fieldsEnriched.push('Description added');
+      if ((!lead.revenue || lead.revenue === 0) && enrichedLead.revenue && enrichedLead.revenue > 0)
+        fieldsEnriched.push(`Revenue: $${enrichedLead.revenue.toLocaleString()}`);
+      if ((!lead.employeeCount || lead.employeeCount <= 1) && enrichedLead.employeeCount && enrichedLead.employeeCount > 1)
+        fieldsEnriched.push(`Employees: ${enrichedLead.employeeCount.toLocaleString()}`);
 
-      // Store enrichment result for display
       setEnrichmentResults(prev => [
-        { leadId, companyName: lead.companyName, fieldsEnriched, enrichedLead },
-        ...prev.filter(r => r.leadId !== leadId)
+        { leadId, companyName: lead.companyName, fieldsEnriched },
+        ...prev.filter(r => r.leadId !== leadId),
       ]);
 
       setEnrichmentStatus(prev => ({ ...prev, [leadId]: 'success' }));
+
+      // Notify parent — enrichLeadWithRealData already persisted via singleton,
+      // so the subscription will update leads, but we also call onEnrich for
+      // immediate parent awareness.
       onEnrich(leadId, enrichedLead);
-      
     } catch (error) {
       console.error('[Enrichment] Error enriching lead:', error);
       setEnrichmentStatus(prev => ({ ...prev, [leadId]: 'error' }));
-      
-      // Reset status after 5 seconds
+
       setTimeout(() => {
         setEnrichmentStatus(prev => ({ ...prev, [leadId]: 'idle' }));
       }, 5000);
@@ -105,24 +112,20 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
 
   const handleBulkEnrich = async () => {
     if (selectedLeads.length === 0) return;
-    
     setBulkEnriching(true);
-    
+
     for (const leadId of selectedLeads) {
       await handleEnrichSingle(leadId);
-      // Add delay between enrichments to avoid rate limiting
       await new Promise(resolve => setTimeout(resolve, 500));
     }
-    
+
     setBulkEnriching(false);
     setSelectedLeads([]);
   };
 
   const handleSelectLead = (leadId: string) => {
-    setSelectedLeads(prev => 
-      prev.includes(leadId) 
-        ? prev.filter(id => id !== leadId)
-        : [...prev, leadId]
+    setSelectedLeads(prev =>
+      prev.includes(leadId) ? prev.filter(id => id !== leadId) : [...prev, leadId]
     );
   };
 
@@ -134,29 +137,21 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: EnrichmentStatusValue) => {
     switch (status) {
-      case 'enriching':
-        return <LoadingSpinner size="sm" />;
-      case 'success':
-        return <CheckCircleIcon className="h-5 w-5 text-green-400" />;
-      case 'error':
-        return <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />;
-      default:
-        return <SparklesIcon className="h-5 w-5 text-blue-400" />;
+      case 'enriching': return <LoadingSpinner size="sm" />;
+      case 'success':   return <CheckCircleIcon className="h-5 w-5 text-green-400" />;
+      case 'error':     return <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />;
+      default:          return <SparklesIcon className="h-5 w-5 text-blue-400" />;
     }
   };
 
-  const getStatusText = (status: string) => {
+  const getStatusText = (status: EnrichmentStatusValue) => {
     switch (status) {
-      case 'enriching':
-        return 'Enriching...';
-      case 'success':
-        return 'Enriched!';
-      case 'error':
-        return 'Failed';
-      default:
-        return 'Enrich';
+      case 'enriching': return 'Enriching...';
+      case 'success':   return 'Enriched!';
+      case 'error':     return 'Failed';
+      default:          return 'Enrich';
     }
   };
 
@@ -171,12 +166,12 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
             Enhance your leads with additional contact information and insights
           </p>
         </div>
-        
+
         {selectedLeads.length > 0 && (
           <button
             onClick={handleBulkEnrich}
             disabled={bulkEnriching}
-            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
             {bulkEnriching && <LoadingSpinner size="sm" />}
             <SparklesIcon className="h-4 w-4" />
@@ -196,7 +191,7 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
             <InformationCircleIcon className="h-8 w-8 text-blue-400" />
           </div>
         </div>
-        
+
         <div className="bg-[#161B22] rounded-lg p-4 border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
@@ -206,12 +201,14 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
             <ExclamationTriangleIcon className="h-8 w-8 text-yellow-400" />
           </div>
         </div>
-        
+
         <div className="bg-[#161B22] rounded-lg p-4 border border-gray-700">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-400">Complete Profiles</p>
-              <p className="text-2xl font-semibold text-green-400">{leads.length - incompleteLeads.length}</p>
+              <p className="text-2xl font-semibold text-green-400">
+                {leads.length - incompleteLeads.length}
+              </p>
             </div>
             <CheckCircleIcon className="h-8 w-8 text-green-400" />
           </div>
@@ -227,7 +224,10 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
           </h4>
           <div className="space-y-3">
             {enrichmentResults.map((result) => (
-              <div key={result.leadId} className="bg-green-900/20 border border-green-700/30 rounded-lg p-4">
+              <div
+                key={result.leadId}
+                className="bg-green-900/20 border border-green-700/30 rounded-lg p-4"
+              >
                 <div className="flex items-center justify-between mb-2">
                   <h5 className="font-medium text-white">{result.companyName}</h5>
                   <span className="text-xs text-green-400 bg-green-900/40 px-2 py-1 rounded">
@@ -243,7 +243,9 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
                     ))}
                   </div>
                 ) : (
-                  <p className="text-xs text-yellow-400">No new data found; all fields may already be filled or unverifiable</p>
+                  <p className="text-xs text-yellow-400">
+                    No new data found; all fields may already be filled or unverifiable.
+                  </p>
                 )}
               </div>
             ))}
@@ -258,17 +260,16 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
             <div className="flex items-center space-x-3">
               <input
                 type="checkbox"
+                id="select-all-enrichment"
                 checked={selectedLeads.length === leads.length && leads.length > 0}
                 onChange={handleSelectAll}
                 className="rounded border-gray-600 bg-gray-700 text-blue-600"
               />
-              <span className="text-sm text-gray-300">
+              <label htmlFor="select-all-enrichment" className="text-sm text-gray-300 cursor-pointer">
                 Select all leads for bulk enrichment
-              </span>
+              </label>
             </div>
-            <div className="text-sm text-gray-400">
-              {selectedLeads.length} selected
-            </div>
+            <div className="text-sm text-gray-400">{selectedLeads.length} selected</div>
           </div>
         </div>
       )}
@@ -285,8 +286,8 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
           incompleteLeads.map((lead) => {
             const enrichmentScore = getEnrichmentScore(lead);
             const needs = getEnrichmentNeeds(lead);
-            const status = enrichmentStatus[lead.id] || 'idle';
-            
+            const status: EnrichmentStatusValue = enrichmentStatus[lead.id] || 'idle';
+
             return (
               <div key={lead.id} className="bg-[#161B22] rounded-lg p-4 border border-gray-700">
                 <div className="flex items-start justify-between">
@@ -297,17 +298,17 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
                       onChange={() => handleSelectLead(lead.id)}
                       className="mt-1 rounded border-gray-600 bg-gray-700 text-blue-600"
                     />
-                    
-                    <div className="flex-1">
+
+                    <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-3 mb-2">
-                        <h4 className="font-medium text-white">{lead.companyName}</h4>
+                        <h4 className="font-medium text-white truncate">{lead.companyName}</h4>
                         <ScoreCircle score={enrichmentScore} size="sm" showLabel={false} />
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-gray-400 whitespace-nowrap">
                           {enrichmentScore}% complete
                         </span>
                       </div>
-                      
-                      <div className="flex items-center space-x-4 text-sm text-gray-400 mb-3">
+
+                      <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-sm text-gray-400 mb-3">
                         <span>{lead.industry}</span>
                         <span>/</span>
                         <span>{lead.location}</span>
@@ -318,7 +319,7 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
                           </>
                         )}
                       </div>
-                      
+
                       <div className="mb-3">
                         <p className="text-xs text-gray-500 mb-1">Missing information:</p>
                         <div className="flex flex-wrap gap-1">
@@ -332,20 +333,20 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
                           ))}
                         </div>
                       </div>
-                      
+
                       <div className="w-full bg-gray-700 rounded-full h-2">
-                        <div 
+                        <div
                           className="bg-gradient-to-r from-yellow-500 to-green-500 h-2 rounded-full transition-all duration-300"
                           style={{ width: `${enrichmentScore}%` }}
                         />
                       </div>
                     </div>
                   </div>
-                  
+
                   <button
                     onClick={() => handleEnrichSingle(lead.id)}
                     disabled={status === 'enriching'}
-                    className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 ml-4"
+                    className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 ml-4 transition-colors whitespace-nowrap"
                   >
                     {getStatusIcon(status)}
                     <span className="text-sm">{getStatusText(status)}</span>
@@ -360,12 +361,12 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
       {/* Enrichment Info */}
       <div className="mt-6 p-4 bg-blue-600/10 border border-blue-600/30 rounded-lg">
         <div className="flex items-start space-x-3">
-          <InformationCircleIcon className="h-5 w-5 text-blue-400 mt-0.5" />
+          <InformationCircleIcon className="h-5 w-5 text-blue-400 mt-0.5 flex-shrink-0" />
           <div>
             <h4 className="text-sm font-medium text-blue-300 mb-1">About Lead Enrichment</h4>
             <p className="text-sm text-blue-200/80">
-              Enrichment adds missing contact information, social media profiles, and company insights 
-              to help you better qualify and reach out to your leads.
+              Enrichment adds missing contact information, social media profiles, and company
+              insights to help you better qualify and reach out to your leads.
             </p>
           </div>
         </div>

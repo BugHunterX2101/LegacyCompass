@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Lead, SearchFilter } from './types';
 import { TopBar } from './components/layout/TopBar';
 import { HomePage } from './components/homepage/HomePage';
@@ -27,7 +27,7 @@ import {
   SparklesIcon,
   LightBulbIcon,
   EnvelopeIcon,
-  ArrowTrendingUpIcon
+  ArrowTrendingUpIcon,
 } from '@heroicons/react/24/outline';
 import { subscribeToLeadUpdates } from './services/realTimeLeadService';
 import { notificationService } from './services/notificationService';
@@ -39,7 +39,7 @@ const SCORE_RANGES = [
   { range: '21-40', min: 21, max: 40 },
   { range: '41-60', min: 41, max: 60 },
   { range: '61-80', min: 61, max: 80 },
-  { range: '81-100', min: 81, max: 100 }
+  { range: '81-100', min: 81, max: 100 },
 ];
 
 function App() {
@@ -50,15 +50,21 @@ function App() {
   const [showScrapeModal, setShowScrapeModal] = useState(false);
   const [searchFilters, setSearchFilters] = useState<SearchFilter[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [useVirtualization, setUseVirtualization] = useState(leads.length > 100);
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
+  const [useVirtualization, setUseVirtualization] = useState(false);
 
-  // Initialize with mock data
+  // Derive selectedLead from leads array so it's never stale after enrichment
+  const selectedLead = useMemo(
+    () => (selectedLeadId ? leads.find(l => l.id === selectedLeadId) || null : null),
+    [selectedLeadId, leads]
+  );
+
+  // Initialize with data from service (includes seed data for first-time users)
   useEffect(() => {
     const initialLeads = getInitialLeads();
     setLeads(initialLeads);
 
-    // Subscribe to real-time updates
+    // Subscribe to real-time updates (enrichment, scraping, etc.)
     const unsubscribe = subscribeToLeadUpdates((updatedLeads) => {
       setLeads(updatedLeads);
     });
@@ -66,18 +72,17 @@ function App() {
     return unsubscribe;
   }, []);
 
-  // Update virtualization based on lead count
+  // Update virtualization threshold based on lead count
   useEffect(() => {
-    setUseVirtualization(leads.length > 500); // Increase threshold for better performance
+    setUseVirtualization(leads.length > 500);
   }, [leads.length]);
 
   const filteredLeads = useMemo(() => {
     let filtered = leads;
 
-    // Apply text search
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(lead => 
+      filtered = filtered.filter(lead =>
         lead.companyName.toLowerCase().includes(query) ||
         lead.industry.toLowerCase().includes(query) ||
         lead.location.toLowerCase().includes(query) ||
@@ -85,7 +90,6 @@ function App() {
       );
     }
 
-    // Apply advanced filters
     searchFilters.forEach(filter => {
       filtered = filtered.filter(lead => {
         const fieldValue = lead[filter.field as keyof Lead];
@@ -102,10 +106,10 @@ function App() {
             return Number(fieldValue) > Number(filterValue);
           case 'less':
             return Number(fieldValue) < Number(filterValue);
-          case 'between':
-            // For between, filterValue should be "min,max"
+          case 'between': {
             const [min, max] = String(filterValue).split(',').map(Number);
             return Number(fieldValue) >= min && Number(fieldValue) <= max;
+          }
           default:
             return true;
         }
@@ -115,20 +119,23 @@ function App() {
     return filtered;
   }, [leads, searchFilters, searchQuery]);
 
-  const handleSearch = (filters: SearchFilter[], query: string) => {
+  // Stable callback reference to prevent AdvancedSearch re-render loop
+  const handleSearch = useCallback((filters: SearchFilter[], query: string) => {
     setSearchFilters(filters);
     setSearchQuery(query);
-  };
+  }, []);
 
   const handleImport = (importedLeads: any[]) => {
     const newLeads = importedLeads.map(lead => ({
       ...lead,
       id: lead.id || `imported-${Date.now()}-${Math.random()}`,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      tags: lead.tags || [],
+      createdAt: lead.createdAt ? new Date(lead.createdAt) : new Date(),
+      updatedAt: new Date(),
     }));
-    
-    setLeads(prevLeads => [...prevLeads, ...newLeads]);
+
+    newLeads.forEach((lead: Lead) => addRealTimeLead(lead));
+
     notificationService.success(
       'Import Successful',
       `Successfully imported ${newLeads.length} leads`
@@ -137,37 +144,28 @@ function App() {
   };
 
   const handleScrapeComplete = (scrapedLeads: any[]) => {
-    const newLeads = scrapedLeads.map(lead => ({
-      ...lead,
-      id: lead.id || `scraped-${Date.now()}-${Math.random()}`,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }));
-    
-    // Persist each lead to localStorage via the service
     const existingIds = new Set(leads.map(l => l.id));
-    const uniqueNewLeads = newLeads.filter((lead: any) => !existingIds.has(lead.id));
+    const uniqueNewLeads = scrapedLeads.filter((lead: any) => !existingIds.has(lead.id));
     uniqueNewLeads.forEach((lead: any) => addRealTimeLead(lead));
-    
+
     notificationService.success(
       'Scraping Complete',
-      `Successfully scraped ${uniqueNewLeads.length} real leads from news sources`
+      `Successfully scraped ${uniqueNewLeads.length} new leads`
     );
     setShowScrapeModal(false);
   };
 
   const handleExport = async () => {
-    const leadsToExport = selectedLeads.length > 0 
+    const leadsToExport = selectedLeads.length > 0
       ? filteredLeads.filter(lead => selectedLeads.includes(lead.id))
       : filteredLeads;
 
     if (leadsToExport.length === 0) {
-      alert('No leads to export');
+      notificationService.warning('No Leads', 'No leads available to export');
       return;
     }
 
     try {
-      // Export as CSV by default, could add format selection
       const csvData = exportLeadsToCSV(leadsToExport);
       downloadFile(csvData, `leads-export-${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
       notificationService.success(
@@ -184,27 +182,18 @@ function App() {
   };
 
   const handleEnrichLead = (leadId: string, enrichedLead: Lead) => {
-    console.log('[App] handleEnrichLead called for:', leadId);
-    // Update the lead in React state with enriched data
-    setLeads(prevLeads =>
-      prevLeads.map(lead =>
-        lead.id === leadId ? { ...lead, ...enrichedLead, id: leadId } : lead
-      )
-    );
-    // Note: enrichLeadWithRealData already persists via the singleton directly,
-    // but we call updateRealTimeLead here as well for safety
+    // updateRealTimeLead triggers the subscription which updates leads state
     updateRealTimeLead(leadId, enrichedLead);
 
-    // Show success notification with enriched company name
     notificationService.success(
       'Lead Enriched',
       `${enrichedLead.companyName} has been enriched with real-time data`
     );
   };
 
-  const handleLeadSelection = (leadIds: string[]) => {
+  const handleLeadSelection = useCallback((leadIds: string[]) => {
     setSelectedLeads(leadIds);
-  };
+  }, []);
 
   const topIndustries = useMemo(() => {
     const industryStats = leads.reduce((acc, lead) => {
@@ -220,37 +209,41 @@ function App() {
       .map(([name, stats]) => ({
         name,
         count: stats.count,
-        avgScore: Math.round(stats.totalScore / stats.count)
+        avgScore: Math.round(stats.totalScore / stats.count),
       }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
   }, [leads]);
 
-  // Calculate score distribution
-  const scoreDistribution = useMemo(() => SCORE_RANGES.map(range => ({
-    range: range.range,
-    count: leads.filter(lead => lead.score >= range.min && lead.score <= range.max).length
-  })), [leads]);
+  const scoreDistribution = useMemo(() =>
+    SCORE_RANGES.map(range => ({
+      range: range.range,
+      count: leads.filter(lead => lead.score >= range.min && lead.score <= range.max).length,
+    })),
+    [leads]
+  );
 
   const renderContent = () => {
     switch (activeTab) {
       case 'home':
         return (
-          <HomePage 
+          <HomePage
             onNavigate={(tab: string) => setActiveTab(tab as TabType)}
             onStartScrape={() => setShowScrapeModal(true)}
             leadCount={leads.length}
             industryCount={new Set(leads.map(l => l.industry)).size}
           />
         );
-      
-      case 'dashboard':
+
+      case 'dashboard': {
         const statusCounts = leads.reduce((acc, l) => {
           acc[l.status] = (acc[l.status] || 0) + 1;
           return acc;
         }, {} as Record<string, number>);
         const statusData = Object.entries(statusCounts).map(([status, count]) => ({ status, count }));
-        const recentLeads = [...leads].sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()).slice(0, 5);
+        const recentLeads = [...leads]
+          .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())
+          .slice(0, 5);
 
         return (
           <div className="space-y-6">
@@ -260,7 +253,6 @@ function App() {
               <ScoreDistributionChart data={scoreDistribution} />
             </div>
 
-            {/* Status Breakdown & Recent Leads */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Lead Status Breakdown */}
               <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
@@ -274,7 +266,7 @@ function App() {
                       contacted: 'from-yellow-500 to-yellow-600',
                       qualified: 'from-green-500 to-green-600',
                       converted: 'from-emerald-500 to-emerald-600',
-                      rejected: 'from-red-500 to-red-600'
+                      rejected: 'from-red-500 to-red-600',
                     };
                     return (
                       <div key={index}>
@@ -325,23 +317,24 @@ function App() {
             <NewsFeed query="B2B sales lead generation" title="Latest Industry News" maxResults={5} />
           </div>
         );
-      
+      }
+
       case 'leads':
         return (
           <div className="space-y-6">
-            <AdvancedSearch 
+            <AdvancedSearch
               onSearch={handleSearch}
-              onResultsCount={() => {}} 
+              onResultsCount={() => {}}
             />
             {useVirtualization ? (
-              <VirtualizedLeadTable 
+              <VirtualizedLeadTable
                 leads={filteredLeads}
                 selectedLeads={selectedLeads}
                 onLeadSelect={handleLeadSelection}
                 containerHeight={600}
               />
             ) : (
-              <LeadTable 
+              <LeadTable
                 leads={filteredLeads}
                 selectedLeads={selectedLeads}
                 onLeadSelect={handleLeadSelection}
@@ -349,26 +342,24 @@ function App() {
             )}
           </div>
         );
-      
+
       case 'enrichment':
         return (
-          <EnrichmentPanel 
+          <EnrichmentPanel
             leads={filteredLeads}
             onEnrich={handleEnrichLead}
           />
         );
-      
+
       case 'ai-insights':
         return selectedLead ? (
-          <AIInsightsPanel 
-            lead={selectedLead}
-          />
+          <AIInsightsPanel lead={selectedLead} />
         ) : (
           <div className="text-center py-12 text-gray-400">
             Select a lead to view AI insights
           </div>
         );
-      
+
       case 'ai-email':
         return selectedLead ? (
           <AIEmailGenerator lead={selectedLead} />
@@ -377,22 +368,28 @@ function App() {
             Select a lead to generate AI emails
           </div>
         );
-      
-      case 'market-analysis':
+
+      case 'market-analysis': {
         const topIndustry = topIndustries[0]?.name || 'Technology';
         const allIndustries = [...new Set(leads.map(l => l.industry))].filter(Boolean).sort();
-        const locationCounts = leads.reduce((acc, l) => { acc[l.location] = (acc[l.location] || 0) + 1; return acc; }, {} as Record<string, number>);
-        const sortedLocations = Object.entries(locationCounts).sort((a, b) => b[1] - a[1]).map(([loc]) => loc);
+        const locationCounts = leads.reduce((acc, l) => {
+          acc[l.location] = (acc[l.location] || 0) + 1;
+          return acc;
+        }, {} as Record<string, number>);
+        const sortedLocations = Object.entries(locationCounts)
+          .sort((a, b) => b[1] - a[1])
+          .map(([loc]) => loc);
         const topLocation = sortedLocations[0] || 'San Francisco, CA';
         return (
-          <AIMarketAnalysisComponent 
-            industry={topIndustry} 
+          <AIMarketAnalysisComponent
+            industry={topIndustry}
             location={topLocation}
             industries={allIndustries.length > 0 ? allIndustries : [topIndustry]}
             locations={sortedLocations.length > 0 ? sortedLocations : [topLocation]}
           />
         );
-      
+      }
+
       default:
         return null;
     }
@@ -401,16 +398,16 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-[#0D1117]">
-        <TopBar 
+        <TopBar
           onImport={() => setShowImportModal(true)}
           onScrape={() => setShowScrapeModal(true)}
           onExport={handleExport}
         />
-        
+
         {/* Navigation */}
         <nav className="bg-[#161B22] border-b border-gray-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex space-x-8">
+            <div className="flex space-x-8 overflow-x-auto">
               {[
                 { id: 'home', label: 'Home', Icon: HomeIcon },
                 { id: 'dashboard', label: 'Dashboard', Icon: ChartBarIcon },
@@ -418,12 +415,12 @@ function App() {
                 { id: 'enrichment', label: 'Enrichment', Icon: SparklesIcon },
                 { id: 'ai-insights', label: 'AI Insights', Icon: LightBulbIcon },
                 { id: 'ai-email', label: 'AI Email', Icon: EnvelopeIcon },
-                { id: 'market-analysis', label: 'Market AI', Icon: ArrowTrendingUpIcon }
+                { id: 'market-analysis', label: 'Market AI', Icon: ArrowTrendingUpIcon },
               ].map((tab) => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id as TabType)}
-                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200 ${
+                  className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-all duration-200 whitespace-nowrap ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-400'
                       : 'border-transparent text-gray-400 hover:text-gray-300 hover:border-gray-300'
@@ -450,80 +447,87 @@ function App() {
         {/* Main Content */}
         <main className={activeTab === 'home' ? '' : 'max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8'}>
           <div key={activeTab} className="animate-fade-in-up">
-          {/* Lead Selection for AI Features */}
-          {(activeTab === 'ai-insights' || activeTab === 'ai-email') && !selectedLead && (
-            <div className="mb-6 bg-[#1E2328] rounded-lg border border-gray-700 p-4">
-              <h3 className="text-lg font-semibold text-white mb-1">Select a Lead for AI Analysis</h3>
-              <p className="text-sm text-gray-400 mb-3">Choose a lead to generate {activeTab === 'ai-insights' ? 'AI-powered insights' : 'personalized emails'}</p>
-              <input
-                type="text"
-                placeholder="Search leads by name, industry, or location..."
-                className="w-full px-3 py-2 mb-4 bg-[#0D1117] border border-gray-600 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                onChange={(e) => {
-                  const q = e.target.value.toLowerCase();
-                  setSearchQuery(q);
-                }}
-              />
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-1">
-                {filteredLeads.slice(0, 18).map((lead, idx) => (
-                  <button
-                    key={lead.id}
-                    onClick={() => setSelectedLead(lead)}
-                    className="p-3 bg-[#161B22] border border-gray-700 rounded-lg hover:border-blue-500 transition-all duration-200 text-left animate-fade-in-up"
-                    style={{ animationDelay: `${idx * 40}ms`, animationFillMode: 'backwards' }}
-                  >
-                    <div className="font-medium text-white truncate">{lead.companyName}</div>
-                    <div className="text-sm text-gray-400 truncate">{lead.industry} &bull; {lead.location}</div>
-                    <div className="flex items-center mt-1 space-x-2">
-                      <span className={`text-xs px-1.5 py-0.5 rounded ${
-                        lead.score >= 80 ? 'bg-green-900/40 text-green-300' :
-                        lead.score >= 60 ? 'bg-yellow-900/40 text-yellow-300' :
-                        'bg-gray-700 text-gray-300'
-                      }`}>Score: {lead.score}</span>
-                      {lead.contactPerson && (
-                        <span className="text-xs text-gray-500 truncate">{lead.contactPerson}</span>
-                      )}
+            {/* Lead Selection for AI Features */}
+            {(activeTab === 'ai-insights' || activeTab === 'ai-email') && !selectedLead && (
+              <div className="mb-6 bg-[#1E2328] rounded-lg border border-gray-700 p-4">
+                <h3 className="text-lg font-semibold text-white mb-1">
+                  Select a Lead for AI Analysis
+                </h3>
+                <p className="text-sm text-gray-400 mb-3">
+                  Choose a lead to generate {activeTab === 'ai-insights' ? 'AI-powered insights' : 'personalized emails'}
+                </p>
+                <input
+                  type="text"
+                  placeholder="Search leads by name, industry, or location..."
+                  className="w-full px-3 py-2 mb-4 bg-[#0D1117] border border-gray-600 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-1">
+                  {filteredLeads.slice(0, 18).map((lead, idx) => (
+                    <button
+                      key={lead.id}
+                      onClick={() => setSelectedLeadId(lead.id)}
+                      className="p-3 bg-[#161B22] border border-gray-700 rounded-lg hover:border-blue-500 transition-all duration-200 text-left animate-fade-in-up"
+                      style={{ animationDelay: `${idx * 40}ms`, animationFillMode: 'backwards' }}
+                    >
+                      <div className="font-medium text-white truncate">{lead.companyName}</div>
+                      <div className="text-sm text-gray-400 truncate">
+                        {lead.industry} &bull; {lead.location}
+                      </div>
+                      <div className="flex items-center mt-1 space-x-2">
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${
+                          lead.score >= 80 ? 'bg-green-900/40 text-green-300' :
+                          lead.score >= 60 ? 'bg-yellow-900/40 text-yellow-300' :
+                          'bg-gray-700 text-gray-300'
+                        }`}>
+                          Score: {lead.score}
+                        </span>
+                        {lead.contactPerson && (
+                          <span className="text-xs text-gray-500 truncate">{lead.contactPerson}</span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                  {filteredLeads.length === 0 && (
+                    <div className="col-span-3 text-center py-6 text-gray-400">
+                      No leads found. Try a different search or scrape new leads.
                     </div>
-                  </button>
-                ))}
-                {filteredLeads.length === 0 && (
-                  <div className="col-span-3 text-center py-6 text-gray-400">
-                    No leads found. Try a different search or scrape new leads.
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-          
-          {selectedLead && (activeTab === 'ai-insights' || activeTab === 'ai-email') && (
-            <div className="mb-6 bg-[#1E2328] rounded-lg border border-gray-700 p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-lg font-semibold text-white">{selectedLead.companyName}</h3>
-                  <p className="text-sm text-gray-400">{selectedLead.industry} / {selectedLead.location}</p>
+                  )}
                 </div>
-                <button
-                  onClick={() => setSelectedLead(null)}
-                  className="text-gray-400 hover:text-white"
-                >
-                  Change Lead
-                </button>
               </div>
-            </div>
-          )}
-          
-          {renderContent()}
+            )}
+
+            {selectedLead && (activeTab === 'ai-insights' || activeTab === 'ai-email') && (
+              <div className="mb-6 bg-[#1E2328] rounded-lg border border-gray-700 p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-lg font-semibold text-white">{selectedLead.companyName}</h3>
+                    <p className="text-sm text-gray-400">
+                      {selectedLead.industry} / {selectedLead.location}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setSelectedLeadId(null)}
+                    className="text-gray-400 hover:text-white transition-colors"
+                  >
+                    Change Lead
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {renderContent()}
           </div>
         </main>
 
         {/* Modals */}
-        <ImportModal 
+        <ImportModal
           isOpen={showImportModal}
           onClose={() => setShowImportModal(false)}
           onImport={handleImport}
         />
-        
-        <ScrapeModal 
+
+        <ScrapeModal
           isOpen={showScrapeModal}
           onClose={() => setShowScrapeModal(false)}
           onComplete={handleScrapeComplete}
@@ -534,7 +538,7 @@ function App() {
           <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between">
               <div className="text-sm text-gray-400">
-                Copyright 2024 LegacyCompass Lead Intelligence Platform. Built with React & TypeScript.
+                Copyright 2024 LegacyCompass Lead Intelligence Platform. Built with React &amp; TypeScript.
               </div>
               <div className="flex items-center space-x-4 text-sm text-gray-400">
                 <span>Total Leads: {leads.length}</span>
@@ -550,10 +554,10 @@ function App() {
             </div>
           </div>
         </footer>
-        
+
         {/* Notifications */}
         <NotificationContainer />
-        
+
         {/* Performance Monitor (only in development) */}
         {import.meta.env.DEV && <PerformanceMonitor />}
       </div>
