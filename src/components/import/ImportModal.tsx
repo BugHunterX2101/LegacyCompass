@@ -16,7 +16,7 @@ import {
 interface ImportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onImport: (data: any[]) => void;
+  onImport: (data: Record<string, unknown>[]) => void;  // App.tsx casts to Lead[]
 }
 
 export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport }) => {

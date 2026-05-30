@@ -10,6 +10,7 @@ import { AdvancedSearch } from './components/search/AdvancedSearch';
 import { EnrichmentPanel } from './components/enrichment/EnrichmentPanel';
 import { ImportModal } from './components/import/ImportModal';
 import { ScrapeModal } from './components/scraping/ScrapeModal';
+import { StatusBadge } from './components/common/StatusBadge';
 import { NotificationContainer } from './components/common/NotificationContainer';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { AIInsightsPanel } from './components/ai/AIInsightsPanel';
@@ -128,12 +129,12 @@ function App() {
     setSearchQuery(query);
   }, []);
 
-  const handleImport = (importedLeads: any[]) => {
-    const newLeads = importedLeads.map(lead => ({
-      ...lead,
-      id: lead.id || `imported-${Date.now()}-${Math.random()}`,
-      tags: lead.tags || [],
-      createdAt: lead.createdAt ? new Date(lead.createdAt) : new Date(),
+  const handleImport = (importedLeads: Record<string, unknown>[]) => {
+    const newLeads: Lead[] = importedLeads.map(raw => ({
+      ...(raw as unknown as Lead),
+      id: (raw.id as string) || `imported-${Date.now()}-${Math.random()}`,
+      tags: (raw.tags as string[]) || [],
+      createdAt: raw.createdAt ? new Date(raw.createdAt as string | number) : new Date(),
       updatedAt: new Date(),
     }));
 
@@ -146,10 +147,10 @@ function App() {
     setShowImportModal(false);
   };
 
-  const handleScrapeComplete = (scrapedLeads: any[]) => {
+  const handleScrapeComplete = (scrapedLeads: Lead[]) => {
     const existingIds = new Set(leads.map(l => l.id));
-    const uniqueNewLeads = scrapedLeads.filter((lead: any) => !existingIds.has(lead.id));
-    uniqueNewLeads.forEach((lead: any) => addRealTimeLead(lead));
+    const uniqueNewLeads = scrapedLeads.filter(lead => !existingIds.has(lead.id));
+    uniqueNewLeads.forEach((lead: Lead) => addRealTimeLead(lead));
 
     notificationService.success(
       'Scraping Complete',
@@ -307,13 +308,7 @@ function App() {
                         </div>
                       </div>
                       <div className="flex items-center space-x-2 ml-3">
-                        <span className={`text-xs px-2 py-1 rounded-full capitalize ${
-                          lead.status === 'qualified' ? 'bg-green-900/40 text-green-300' :
-                          lead.status === 'converted' ? 'bg-emerald-900/40 text-emerald-300' :
-                          lead.status === 'contacted' ? 'bg-yellow-900/40 text-yellow-300' :
-                          lead.status === 'rejected' ? 'bg-red-900/40 text-red-300' :
-                          'bg-blue-900/40 text-blue-300'
-                        }`}>{lead.status}</span>
+                        <StatusBadge status={lead.status} size="sm" />
                         <span className="text-sm font-semibold text-white">{lead.score}</span>
                       </div>
                     </div>

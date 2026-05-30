@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Lead } from '../../types';
 import {
   XMarkIcon,
   MagnifyingGlassIcon,
@@ -14,7 +15,7 @@ import { scrapeLeadsFromNews } from '../../services/scrapingService';
 interface ScrapeModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onComplete: (scrapedLeads: any[]) => void;
+  onComplete: (scrapedLeads: Lead[]) => void;
 }
 
 export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onComplete }) => {

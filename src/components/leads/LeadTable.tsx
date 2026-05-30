@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Lead } from '../../types';
 import { ScoreCircle } from '../common/ScoreCircle';
+import { StatusBadge } from '../common/StatusBadge';
 import { 
   ArrowTopRightOnSquareIcon as ExternalLinkIcon, 
   EnvelopeIcon, 
@@ -82,17 +83,6 @@ export const LeadTable: React.FC<LeadTableProps> = ({
     const subject = encodeURIComponent(`Partnership Opportunity - ${leadName}`);
     const body = encodeURIComponent(`Hi,\n\nI hope this email finds you well. I'd love to discuss a potential partnership opportunity.\n\nBest regards`);
     window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${subject}&body=${body}`, '_blank');
-  };
-
-  const getStatusColor = (status: Lead['status']) => {
-    switch (status) {
-      case 'new': return 'bg-blue-600/20 text-blue-300 border border-blue-600/30';
-      case 'contacted': return 'bg-yellow-600/20 text-yellow-300 border border-yellow-600/30';
-      case 'qualified': return 'bg-green-600/20 text-green-300 border border-green-600/30';
-      case 'converted': return 'bg-purple-600/20 text-purple-300 border border-purple-600/30';
-      case 'rejected': return 'bg-red-600/20 text-red-300 border border-red-600/30';
-      default: return 'bg-gray-600/20 text-gray-300 border border-gray-600/30';
-    }
   };
 
   const SortIcon: React.FC<{ field: SortField }> = ({ field }) => {
@@ -294,12 +284,13 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <ScoreCircle score={lead.score} size="sm" showLabel={false} />
+                  <div className="flex items-center gap-1.5">
+                    <ScoreCircle score={lead.score} size="sm" showLabel={false} />
+                    <span className="text-xs text-gray-300 font-medium">{lead.score}</span>
+                  </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lead.status)}`}>
-                    {lead.status}
-                  </span>
+                  <StatusBadge status={lead.status} size="sm" />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center space-x-2">

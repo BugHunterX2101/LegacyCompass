@@ -44,6 +44,7 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead }) => {
       try {
         setLoading(true);
         setError(null);
+        setInsights(null);
         const aiInsights = await aiService.analyzeLeadWithAI(lead);
         setInsights(aiInsights);
       } catch (err) {
@@ -55,7 +56,9 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead }) => {
     };
 
     generateInsights();
-  }, [lead]);
+  // Only re-fetch when lead identity or its last-updated timestamp changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lead.id, lead.updatedAt]);
 
   const getInsightIcon = (type: AIInsight['type']) => {
     switch (type) {
@@ -100,7 +103,13 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead }) => {
       <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
         <div className="text-center py-8">
           <ExclamationTriangleIcon className="h-12 w-12 text-red-400 mx-auto mb-3" />
-          <p className="text-red-400">{error}</p>
+          <p className="text-red-400 mb-4">{error}</p>
+          <button
+            onClick={() => { setError(null); setLoading(true); aiService.analyzeLeadWithAI(lead).then(setInsights).catch(e => setError(e.message || 'Failed')).finally(() => setLoading(false)); }}
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
+          >
+            Retry Analysis
+          </button>
         </div>
       </div>
     );

@@ -2,6 +2,7 @@ import React, { useState, useMemo, useCallback } from 'react';
 import { Lead } from '../../types';
 import { performanceService } from '../../services/performanceService';
 import { ScoreCircle } from '../common/ScoreCircle';
+import { StatusBadge } from '../common/StatusBadge';
 import { 
   EnvelopeIcon, 
   PhoneIcon,
@@ -109,16 +110,6 @@ export const VirtualizedLeadTable: React.FC<VirtualizedLeadTableProps> = ({
     window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${subject}&body=${body}`, '_blank');
   }, []);
 
-  const getStatusColor = useCallback((status: Lead['status']) => {
-    switch (status) {
-      case 'new': return 'bg-blue-600/20 text-blue-300';
-      case 'contacted': return 'bg-yellow-600/20 text-yellow-300';
-      case 'qualified': return 'bg-green-600/20 text-green-300';
-      case 'converted': return 'bg-purple-600/20 text-purple-300';
-      case 'rejected': return 'bg-red-600/20 text-red-300';
-      default: return 'bg-gray-600/20 text-gray-300';
-    }
-  }, []);
 
   const SortIcon: React.FC<{ field: SortField }> = React.memo(({ field }) => {
     if (sortField !== field) return null;
@@ -146,8 +137,8 @@ export const VirtualizedLeadTable: React.FC<VirtualizedLeadTableProps> = ({
 
       {/* Table Header */}
       <div className="bg-[#161B22] border-b border-gray-700">
-        <div className="grid grid-cols-12 gap-4 px-6 py-3 text-xs font-medium text-gray-300 uppercase tracking-wider">
-          <div className="col-span-1">
+        <div className={`grid gap-4 px-6 py-3 text-xs font-medium text-gray-300 uppercase tracking-wider ${onSelectLeadForAI ? 'grid-cols-[32px_1fr_1fr_1fr_1fr_52px_88px_80px]' : 'grid-cols-[32px_1fr_1fr_1fr_1fr_52px_88px]'}`}>
+          <div>
             <input
               type="checkbox"
               checked={selectedLeads.length === leads.length && leads.length > 0}
@@ -156,38 +147,38 @@ export const VirtualizedLeadTable: React.FC<VirtualizedLeadTableProps> = ({
             />
           </div>
           <div 
-            className="col-span-3 cursor-pointer hover:text-white transition-colors flex items-center"
+            className="cursor-pointer hover:text-white transition-colors flex items-center"
             onClick={() => handleSort('companyName')}
           >
             Company <SortIcon field="companyName" />
           </div>
           <div 
-            className="col-span-2 cursor-pointer hover:text-white transition-colors flex items-center"
+            className="cursor-pointer hover:text-white transition-colors flex items-center"
             onClick={() => handleSort('industry')}
           >
             Industry <SortIcon field="industry" />
           </div>
-          <div className="col-span-2">Contact</div>
+          <div>Contact</div>
           <div 
-            className="col-span-2 cursor-pointer hover:text-white transition-colors flex items-center"
+            className="cursor-pointer hover:text-white transition-colors flex items-center"
             onClick={() => handleSort('location')}
           >
             Location <SortIcon field="location" />
           </div>
           <div 
-            className="col-span-1 cursor-pointer hover:text-white transition-colors flex items-center"
+            className="cursor-pointer hover:text-white transition-colors flex items-center"
             onClick={() => handleSort('score')}
           >
             Score <SortIcon field="score" />
           </div>
           <div 
-            className="col-span-1 cursor-pointer hover:text-white transition-colors flex items-center"
+            className="cursor-pointer hover:text-white transition-colors flex items-center"
             onClick={() => handleSort('status')}
           >
             Status <SortIcon field="status" />
           </div>
           {onSelectLeadForAI && (
-            <div className="col-span-1">AI</div>
+            <div>AI</div>
           )}
         </div>
       </div>
@@ -206,10 +197,10 @@ export const VirtualizedLeadTable: React.FC<VirtualizedLeadTableProps> = ({
           {visibleLeads.map((lead) => (
             <div 
               key={lead.id}
-              className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-700 hover:bg-[#262C36] transition-colors"
+              className={`grid gap-4 px-6 py-4 border-b border-gray-700 hover:bg-[#262C36] transition-colors ${onSelectLeadForAI ? 'grid-cols-[32px_1fr_1fr_1fr_1fr_52px_88px_80px]' : 'grid-cols-[32px_1fr_1fr_1fr_1fr_52px_88px]'}`}
               style={{ height: ITEM_HEIGHT }}
             >
-              <div className="col-span-1 flex items-center">
+              <div className="flex items-center">
                 <input
                   type="checkbox"
                   checked={selectedLeads.includes(lead.id)}
@@ -218,18 +209,18 @@ export const VirtualizedLeadTable: React.FC<VirtualizedLeadTableProps> = ({
                 />
               </div>
               
-              <div className="col-span-3 flex flex-col justify-center">
+              <div className="flex flex-col justify-center">
                 <div className="text-sm font-medium text-white truncate">{lead.companyName}</div>
                 {lead.contactPerson && (
                   <div className="text-xs text-gray-400 truncate">{lead.contactPerson}</div>
                 )}
               </div>
               
-              <div className="col-span-2 flex items-center">
+              <div className="flex items-center">
                 <div className="text-sm text-white truncate">{lead.industry}</div>
               </div>
               
-              <div className="col-span-2 flex flex-col justify-center">
+              <div className="flex flex-col justify-center">
                 {lead.email && (
                   <button
                     onClick={() => handleEmailClick(lead.email!, lead.companyName)}
@@ -250,21 +241,20 @@ export const VirtualizedLeadTable: React.FC<VirtualizedLeadTableProps> = ({
                 )}
               </div>
               
-              <div className="col-span-2 flex items-center">
+              <div className="flex items-center">
                 <div className="text-sm text-white truncate">{lead.location}</div>
               </div>
               
-              <div className="col-span-1 flex items-center justify-center">
+              <div className="flex items-center gap-1.5">
                 <ScoreCircle score={lead.score} size="sm" showLabel={false} />
+                <span className="text-xs text-gray-300 font-medium">{lead.score}</span>
               </div>
               
-              <div className="col-span-1 flex items-center">
-                <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lead.status)}`}>
-                  {lead.status}
-                </span>
+              <div className="flex items-center">
+                <StatusBadge status={lead.status} size="sm" />
               </div>
               {onSelectLeadForAI && (
-                <div className="col-span-1 flex items-center">
+                <div className="flex items-center">
                   <button
                     onClick={() => onSelectLeadForAI(lead.id)}
                     title="Analyze with AI"
