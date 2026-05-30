@@ -232,8 +232,8 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-white">{lead.industry || 'N/A'}</div>
                 </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="space-y-1">
+                <td className="px-6 py-4">
+                  <div className="space-y-1 min-w-[160px]">
                     {lead.email && (
                       <div className="flex items-center text-sm">
                         <EnvelopeIcon className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />

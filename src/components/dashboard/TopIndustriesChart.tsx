@@ -6,7 +6,7 @@ interface TopIndustriesChartProps {
 }
 
 export const TopIndustriesChart: React.FC<TopIndustriesChartProps> = ({ data }) => {
-  const maxCount = Math.max(...data.map(d => d.count), 1);
+  const maxCount = data.length > 0 ? Math.max(...data.map(d => d.count), 1) : 1;
 
   return (
     <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">

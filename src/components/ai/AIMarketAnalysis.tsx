@@ -208,7 +208,7 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
           <ChartBarIcon className="h-5 w-5 mr-2 text-blue-400" />
           AI Market Analysis
         </h3>
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap w-full sm:w-auto">
           {/* Industry Selector */}
           <div className="flex items-center gap-2">
             <label className="text-xs text-gray-400 whitespace-nowrap">Industry:</label>

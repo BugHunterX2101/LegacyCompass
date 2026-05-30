@@ -110,7 +110,7 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-xl font-semibold text-white">Lead Scraper</h3>
           <button
-            onClick={onClose}
+            onClick={() => { if (!scraping) { setError(null); setProgress(0); setCurrentStep(''); } onClose(); }}
             disabled={scraping}
             className="text-gray-400 hover:text-white transition-colors disabled:opacity-50"
           >

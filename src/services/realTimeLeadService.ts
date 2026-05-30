@@ -155,32 +155,10 @@ export const scrapeRealTimeLeads = async (
     }
   }
 
-  // Fallback: filter existing leads
-  await new Promise(resolve => setTimeout(resolve, 2000));
-
-  const allLeads = getRealTimeLeads();
-  const queryLower = query.toLowerCase();
-
-  let filteredLeads = allLeads.filter(lead =>
-    lead.companyName.toLowerCase().includes(queryLower) ||
-    lead.industry.toLowerCase().includes(queryLower) ||
-    lead.location.toLowerCase().includes(queryLower)
+  // AI proxy is unavailable — do not return fake/shuffled data
+  throw new Error(
+    'AI service is unavailable. Please ensure the /api/ai proxy is running and try again.'
   );
-
-  if (filteredLeads.length === 0) {
-    filteredLeads = allLeads.sort(() => 0.5 - Math.random());
-  }
-
-  const results = filteredLeads.slice(0, maxResults);
-
-  return results.map(lead => ({
-    ...lead,
-    id: `scraped-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-    source: source,
-    tags: [...(lead.tags || []), 'scraped', source],
-    createdAt: new Date(),
-    updatedAt: new Date(),
-  }));
 };
 
 // Validate enrichment field values - reject placeholders and unknowns
@@ -288,41 +266,16 @@ export const enrichLeadWithRealData = async (lead: Lead): Promise<Lead> => {
     }
   }
 
-  // Fallback: template-based enrichment
-  await new Promise(resolve => setTimeout(resolve, 1000));
-
-  const enrichedLead = { ...lead };
-
-  if (!enrichedLead.email && enrichedLead.contactPerson) {
-    const parts = enrichedLead.contactPerson.split(' ');
-    const firstName = parts[0]?.toLowerCase() || 'contact';
-    const lastName = parts[1]?.toLowerCase() || 'info';
-    const domain = enrichedLead.companyName.toLowerCase().replace(/[^a-z0-9]/g, '').substring(0, 15);
-    enrichedLead.email = `${firstName}.${lastName}@${domain}.com`;
-  }
-
-  if (!enrichedLead.phone) {
-    enrichedLead.phone = 'Contact via website';
-  }
-
-  if (!enrichedLead.linkedinProfile && enrichedLead.contactPerson) {
-    const parts = enrichedLead.contactPerson.split(' ');
-    const firstName = parts[0]?.toLowerCase() || 'contact';
-    const lastName = parts[1]?.toLowerCase() || '';
-    enrichedLead.linkedinProfile = `https://linkedin.com/in/${firstName}-${lastName}`;
-  }
-
-  if (!enrichedLead.description) {
-    enrichedLead.description = `${enrichedLead.companyName} is a company in the ${enrichedLead.industry} industry.`;
-  }
-
-  enrichedLead.updatedAt = new Date();
-  enrichedLead.score = calculateLeadScore(enrichedLead);
-
-  // Persist fallback enrichment
-  realTimeLeadService.updateLead(lead.id, enrichedLead);
-
-  return enrichedLead;
+  // AI proxy is unavailable — return lead unchanged with timestamp update
+  // Do not fabricate contact data; real enrichment requires the AI proxy
+  const unchanged: Lead = {
+    ...lead,
+    updatedAt: new Date(),
+  };
+  realTimeLeadService.updateLead(lead.id, unchanged);
+  throw new Error(
+    'AI enrichment service is unavailable. Please ensure the /api/ai proxy is running.'
+  );
 };
 
 // Export functions

@@ -302,7 +302,7 @@ function App() {
                   {recentLeads.map((lead) => (
                     <div key={lead.id} className="flex items-center justify-between p-3 bg-[#161B22] rounded-lg border border-gray-700">
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-white truncate">{lead.companyName}</div>
+                        <div className="font-medium text-white truncate text-sm">{lead.companyName}</div>
                         <div className="text-xs text-gray-400">
                           {lead.industry} &bull; {lead.contactPerson || 'No contact'}
                         </div>
@@ -492,7 +492,7 @@ function App() {
                         className="p-3 bg-[#161B22] border border-gray-700 rounded-lg hover:border-blue-500 transition-all duration-200 text-left animate-fade-in-up"
                         style={{ animationDelay: `${idx * 40}ms`, animationFillMode: 'backwards' }}
                       >
-                        <div className="font-medium text-white truncate">{lead.companyName}</div>
+                        <div className="font-medium text-white truncate text-sm">{lead.companyName}</div>
                         <div className="text-sm text-gray-400 truncate">
                           {lead.industry} &bull; {lead.location}
                         </div>

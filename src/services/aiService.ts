@@ -212,7 +212,7 @@ class AIService {
         education: this.predictEducation(lead),
         interests: this.predictInterests(lead)
       },
-      confidence: Math.random() * 30 + 70
+      confidence: 70
     };
   }
 
@@ -234,7 +234,7 @@ class AIService {
 
     await this.delay(600);
     const templates = this.getEmailTemplates(purpose);
-    const selectedTemplate = templates[Math.floor(Math.random() * templates.length)];
+    const selectedTemplate = templates[0];
 
     return {
       subject: this.personalizeSubject(selectedTemplate.subject, lead),
@@ -318,10 +318,10 @@ class AIService {
 
     await this.delay(400);
     return {
-      sentiment: ['positive', 'neutral', 'negative'][Math.floor(Math.random() * 3)] as 'positive' | 'neutral' | 'negative',
+      sentiment: 'neutral' as const,
       intent: this.analyzeIntent(messages),
       nextBestAction: this.recommendNextAction(messages),
-      urgency: ['high', 'medium', 'low'][Math.floor(Math.random() * 3)] as 'high' | 'medium' | 'low',
+      urgency: 'medium' as const,
       topics: this.extractTopics(messages)
     };
   }
@@ -352,7 +352,7 @@ class AIService {
       try {
         const realPrediction = await predictLeadOutcomeWithRealAI(lead);
         return {
-          conversionProbability: realPrediction.conversionProbability ?? (Math.random() * 40 + 60),
+          conversionProbability: realPrediction.conversionProbability ?? 50,
           timeToConversion: realPrediction.timeToConversion || this.predictTimeToConversion(lead),
           valueEstimate: realPrediction.valueEstimate || this.estimateLeadValue(lead),
           riskFactors: realPrediction.riskFactors || this.identifyLeadRisks(lead),
@@ -365,7 +365,7 @@ class AIService {
 
     await this.delay(500);
     return {
-      conversionProbability: Math.random() * 40 + 60,
+      conversionProbability: 50,
       timeToConversion: this.predictTimeToConversion(lead),
       valueEstimate: this.estimateLeadValue(lead),
       riskFactors: this.identifyLeadRisks(lead),
@@ -544,33 +544,15 @@ class AIService {
     return `${firstName}.${lastName}@${domain}.com`;
   }
 
-  private generatePhoneNumber(location: string): string {
-    const areaCodes: { [key: string]: string } = {
-      'San Francisco': '415',
-      'New York': '212',
-      'Los Angeles': '213',
-      'Chicago': '312',
-      'Boston': '617',
-      'Seattle': '206'
-    };
-
-    let areaCode = '555';
-    for (const [city, code] of Object.entries(areaCodes)) {
-      if (location.includes(city)) {
-        areaCode = code;
-        break;
-      }
-    }
-
-    const number = Math.floor(Math.random() * 9000000) + 1000000;
-    return `+1-${areaCode}-${number.toString().slice(0, 3)}-${number.toString().slice(3)}`;
+  private generatePhoneNumber(_location: string): string {
+    // Do not fabricate phone numbers — return empty so the field stays blank until real enrichment
+    return '';
   }
 
   private generateLinkedInProfile(contactPerson?: string): string {
     if (!contactPerson) return '';
-    
     const name = contactPerson.toLowerCase().replace(/\s+/g, '-');
-    return `https://linkedin.com/in/${name}-${Math.floor(Math.random() * 999)}`;
+    return `https://linkedin.com/in/${name}`;
   }
 
   private generateTwitterHandle(companyName: string): string {
@@ -621,18 +603,15 @@ class AIService {
   }
 
   private predictRole(_lead: Lead): string {
-    const roles = ['VP of Technology', 'Director of Operations', 'Chief Innovation Officer', 'Head of Digital'];
-    return roles[Math.floor(Math.random() * roles.length)];
+    return 'Business Leader';
   }
 
   private predictExperience(_lead: Lead): string {
-    const experience = ['10+ years in technology leadership', '15+ years in industry', '8+ years in current role'];
-    return experience[Math.floor(Math.random() * experience.length)];
+    return '10+ years in industry';
   }
 
   private predictEducation(_lead: Lead): string {
-    const education = ['MBA from top-tier university', 'Engineering degree', 'Business Administration'];
-    return education[Math.floor(Math.random() * education.length)];
+    return 'University educated';
   }
 
   private predictInterests(_lead: Lead): string[] {

@@ -108,7 +108,7 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({
                 className="w-16 h-16 rounded object-cover flex-shrink-0 bg-gray-700"
                 loading="lazy"
                 referrerPolicy="no-referrer"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                onError={(e) => { const t = e.target as HTMLImageElement; t.style.display = 'none'; t.parentElement && (t.parentElement.style.display = 'none'); }}
               />
             )}
             <div className="flex-1 min-w-0">

@@ -25,6 +25,7 @@ interface EnrichmentResult {
   leadId: string;
   companyName: string;
   fieldsEnriched: string[];
+  error?: string;
 }
 
 export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnrich }) => {
@@ -103,10 +104,15 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
     } catch (error) {
       console.error('[Enrichment] Error enriching lead:', error);
       setEnrichmentStatus(prev => ({ ...prev, [leadId]: 'error' }));
-
+      // Store the error message so we can surface it in the UI
+      const msg = error instanceof Error ? error.message : 'Enrichment failed';
+      setEnrichmentResults(prev => [
+        { leadId, companyName: leads.find(l => l.id === leadId)?.companyName || leadId, fieldsEnriched: [], error: msg },
+        ...prev.filter(r => r.leadId !== leadId),
+      ]);
       setTimeout(() => {
         setEnrichmentStatus(prev => ({ ...prev, [leadId]: 'idle' }));
-      }, 5000);
+      }, 6000);
     }
   };
 
@@ -227,7 +233,7 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
             {enrichmentResults.map((result) => (
               <div
                 key={result.leadId}
-                className="bg-green-900/20 border border-green-700/30 rounded-lg p-4"
+                className={`rounded-lg p-4 border ${result.error ? 'bg-red-900/10 border-red-700/30' : 'bg-green-900/20 border-green-700/30'}`}
               >
                 <div className="flex items-center justify-between mb-2">
                   <h5 className="font-medium text-white">{result.companyName}</h5>
@@ -235,7 +241,9 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
                     {result.fieldsEnriched.length} fields enriched
                   </span>
                 </div>
-                {result.fieldsEnriched.length > 0 ? (
+                {result.error ? (
+                  <p className="text-xs text-red-400">{result.error}</p>
+                ) : result.fieldsEnriched.length > 0 ? (
                   <div className="flex flex-wrap gap-2">
                     {result.fieldsEnriched.map((field, idx) => (
                       <span key={idx} className="text-xs bg-green-800/30 text-green-300 px-2 py-1 rounded">
@@ -245,7 +253,7 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
                   </div>
                 ) : (
                   <p className="text-xs text-yellow-400">
-                    No new data found; all fields may already be filled or unverifiable.
+                    No new data found — all fields may already be filled or AI could not verify new data.
                   </p>
                 )}
               </div>
@@ -323,7 +331,7 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
 
                       <div className="mb-3">
                         <p className="text-xs text-gray-500 mb-1">Missing information:</p>
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-1 max-h-20 overflow-y-auto">
                           {needs.map((need, index) => (
                             <span
                               key={index}
