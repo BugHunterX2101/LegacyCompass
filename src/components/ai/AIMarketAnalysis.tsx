@@ -285,7 +285,7 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Industry Trends */}
         <div className="bg-[#161B22] rounded-lg p-4 border border-gray-700">
-          <h4 className="text-md font-medium text-white mb-4 flex items-center">
+          <h4 className="text-base font-medium text-white mb-4 flex items-center">
             <ArrowTrendingUpIcon className="h-4 w-4 mr-2 text-green-400" />
             Industry Trends
           </h4>
@@ -301,7 +301,7 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
 
         {/* Competitor Insights */}
         <div className="bg-[#161B22] rounded-lg p-4 border border-gray-700">
-          <h4 className="text-md font-medium text-white mb-4 flex items-center">
+          <h4 className="text-base font-medium text-white mb-4 flex items-center">
             <UserGroupIcon className="h-4 w-4 mr-2 text-blue-400" />
             Competitor Insights
           </h4>
@@ -317,7 +317,7 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
 
         {/* Market Opportunities */}
         <div className="bg-[#161B22] rounded-lg p-4 border border-gray-700">
-          <h4 className="text-md font-medium text-white mb-4 flex items-center">
+          <h4 className="text-base font-medium text-white mb-4 flex items-center">
             <LightBulbIcon className="h-4 w-4 mr-2 text-yellow-400" />
             Market Opportunities
           </h4>
@@ -333,7 +333,7 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
 
         {/* Risk Factors */}
         <div className="bg-[#161B22] rounded-lg p-4 border border-gray-700">
-          <h4 className="text-md font-medium text-white mb-4 flex items-center">
+          <h4 className="text-base font-medium text-white mb-4 flex items-center">
             <ExclamationTriangleIcon className="h-4 w-4 mr-2 text-red-400" />
             Risk Factors
           </h4>
@@ -350,7 +350,7 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
 
       {/* Recommendations */}
       <div className="mt-6 bg-[#161B22] rounded-lg p-4 border border-gray-700">
-        <h4 className="text-md font-medium text-white mb-4 flex items-center">
+        <h4 className="text-base font-medium text-white mb-4 flex items-center">
           <LightBulbIcon className="h-4 w-4 mr-2 text-purple-400" />
           AI Recommendations
         </h4>

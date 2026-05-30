@@ -15,7 +15,7 @@ export const ScoreDistributionChart: React.FC<ScoreDistributionChartProps> = ({ 
           <div key={index} className="flex items-center">
             <div className="w-16 text-sm text-gray-300 font-medium">{item.range}</div>
             <div className="flex-1 mx-4">
-              <div className="bg-[#1A1C1E] rounded-full h-4 overflow-hidden">
+              <div className="bg-[#161B22] rounded-full h-4 overflow-hidden">
                 <div 
                   className="h-full bg-gradient-to-r from-[#2563EB] to-[#6366F1] rounded-full transition-all duration-300"
                   style={{ width: `${(item.count / maxCount) * 100}%` }}

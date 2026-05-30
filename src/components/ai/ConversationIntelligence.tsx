@@ -93,9 +93,9 @@ export const ConversationIntelligence: React.FC<ConversationIntelligenceProps> =
 
   const getUrgencyColor = (urgency: string) => {
     switch (urgency) {
-      case 'high': return 'bg-red-600';
-      case 'medium': return 'bg-yellow-600';
-      default: return 'bg-blue-600';
+      case 'high': return 'bg-red-900/30 border border-red-700/40 text-red-300';
+      case 'medium': return 'bg-yellow-900/30 border border-yellow-700/40 text-yellow-300';
+      default: return 'bg-blue-900/30 border border-blue-700/40 text-blue-300';
     }
   };
 
@@ -121,7 +121,7 @@ export const ConversationIntelligence: React.FC<ConversationIntelligenceProps> =
         {/* Message Input Panel */}
         <div className="space-y-4">
           <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
-            <h3 className="text-md font-semibold text-white mb-4">Conversation Messages</h3>
+            <h3 className="text-base font-semibold text-white mb-4">Conversation Messages</h3>
 
             {/* Existing messages */}
             {messages.length > 0 && (
@@ -257,7 +257,7 @@ export const ConversationIntelligence: React.FC<ConversationIntelligenceProps> =
                     <ClockIcon className="h-4 w-4 text-yellow-400" />
                     <span className="text-xs text-gray-400 font-medium">Urgency</span>
                   </div>
-                  <span className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold text-white ${getUrgencyColor(analysis.urgency)}`}>
+                  <span className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold ${getUrgencyColor(analysis.urgency)}`}>
                     {analysis.urgency.toUpperCase()}
                   </span>
                 </div>

@@ -6,13 +6,15 @@ import {
   EnvelopeIcon, 
   PhoneIcon,
   ChevronUpIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 
 interface VirtualizedLeadTableProps {
   leads: Lead[];
   onLeadSelect: (leadIds: string[]) => void;
   selectedLeads: string[];
+  onSelectLeadForAI?: (leadId: string) => void;
   containerHeight?: number;
 }
 
@@ -25,6 +27,7 @@ export const VirtualizedLeadTable: React.FC<VirtualizedLeadTableProps> = ({
   leads, 
   onLeadSelect, 
   selectedLeads,
+  onSelectLeadForAI,
   containerHeight = 800 // Increased for better viewing of large datasets
 }) => {
   const [scrollTop, setScrollTop] = useState(0);
@@ -183,6 +186,9 @@ export const VirtualizedLeadTable: React.FC<VirtualizedLeadTableProps> = ({
           >
             Status <SortIcon field="status" />
           </div>
+          {onSelectLeadForAI && (
+            <div className="col-span-1">AI</div>
+          )}
         </div>
       </div>
 
@@ -257,6 +263,18 @@ export const VirtualizedLeadTable: React.FC<VirtualizedLeadTableProps> = ({
                   {lead.status}
                 </span>
               </div>
+              {onSelectLeadForAI && (
+                <div className="col-span-1 flex items-center">
+                  <button
+                    onClick={() => onSelectLeadForAI(lead.id)}
+                    title="Analyze with AI"
+                    className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-300 bg-purple-900/20 border border-purple-700/30 rounded-md hover:bg-purple-900/40 hover:border-purple-600/50 transition-all duration-200"
+                  >
+                    <SparklesIcon className="h-3 w-3" />
+                    Analyze
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>

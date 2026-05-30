@@ -6,13 +6,15 @@ import {
   EnvelopeIcon, 
   PhoneIcon,
   ChevronUpIcon,
-  ChevronDownIcon
+  ChevronDownIcon,
+  SparklesIcon
 } from '@heroicons/react/24/outline';
 
 interface LeadTableProps {
   leads: Lead[];
   onLeadSelect: (leadIds: string[]) => void;
   selectedLeads: string[];
+  onSelectLeadForAI?: (leadId: string) => void;
 }
 
 type SortField = keyof Lead;
@@ -21,7 +23,8 @@ type SortDirection = 'asc' | 'desc';
 export const LeadTable: React.FC<LeadTableProps> = ({ 
   leads, 
   onLeadSelect, 
-  selectedLeads 
+  selectedLeads,
+  onSelectLeadForAI
 }) => {
   const [sortField, setSortField] = useState<SortField>('companyName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -202,6 +205,11 @@ export const LeadTable: React.FC<LeadTableProps> = ({
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
                 Links
               </th>
+              {onSelectLeadForAI && (
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                  AI
+                </th>
+              )}
             </tr>
           </thead>
           <tbody className="bg-[#1E2328] divide-y divide-gray-700">
@@ -347,6 +355,18 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                     )}
                   </div>
                 </td>
+                {onSelectLeadForAI && (
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <button
+                      onClick={() => onSelectLeadForAI(lead.id)}
+                      title="Analyze with AI"
+                      className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-300 bg-purple-900/20 border border-purple-700/30 rounded-md hover:bg-purple-900/40 hover:border-purple-600/50 transition-all duration-200"
+                    >
+                      <SparklesIcon className="h-3 w-3" />
+                      Analyze
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

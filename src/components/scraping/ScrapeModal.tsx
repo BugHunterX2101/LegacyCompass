@@ -3,7 +3,6 @@ import {
   XMarkIcon,
   MagnifyingGlassIcon,
   ExclamationTriangleIcon,
-  CheckCircleIcon,
   BriefcaseIcon,
   RocketLaunchIcon,
   BuildingOfficeIcon,
@@ -137,7 +136,7 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
                     }`}
                   >
                     <div className="flex items-center space-x-3 mb-2">
-                      <source.Icon className="h-6 w-6 text-gray-300 flex-shrink-0" />
+                      <source.Icon className={`h-6 w-6 flex-shrink-0 ${selectedSource === source.id ? 'text-blue-400' : 'text-gray-400'}`} />
                       <div>
                         <h4 className="font-medium text-white">{source.name}</h4>
                         <p className="text-xs text-gray-400">{source.estimatedTime}</p>
@@ -248,9 +247,9 @@ export const ScrapeModal: React.FC<ScrapeModalProps> = ({ isOpen, onClose, onCom
 
             <div className="mt-6 p-4 bg-blue-600/10 border border-blue-600/30 rounded-lg">
               <div className="flex items-center justify-center space-x-2 text-blue-300">
-                <CheckCircleIcon className="h-5 w-5" />
+                <MagnifyingGlassIcon className="h-5 w-5 animate-pulse" />
                 <span className="text-sm">
-                  Scraping {maxResults} leads from {sources.find(s => s.id === selectedSource)?.name}
+                  Searching for {maxResults} leads from {sources.find(s => s.id === selectedSource)?.name}
                 </span>
               </div>
             </div>

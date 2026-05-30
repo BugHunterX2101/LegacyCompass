@@ -13,12 +13,29 @@ import { Lead } from '../../types';
 import { aiService } from '../../services/aiService';
 import { LoadingSpinner } from '../common/LoadingSpinner';
 
+interface AIInsight {
+  type: 'opportunity' | 'risk' | 'recommendation' | 'prediction' | 'general';
+  title: string;
+  description: string;
+}
+
+interface AIAnalysis {
+  leadScore: number;
+  predictedConversion: number;
+  bestContactTime: string;
+  insights: AIInsight[];
+  recommendedApproach: string;
+  recommendations?: string[];
+  competitorAnalysis?: string[];
+  marketTrends?: string[];
+}
+
 interface AIInsightsPanelProps {
   lead: Lead;
 }
 
 export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead }) => {
-  const [insights, setInsights] = useState<any>(null);
+  const [insights, setInsights] = useState<AIAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,20 +57,22 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead }) => {
     generateInsights();
   }, [lead]);
 
-  const getInsightIcon = (type: string) => {
+  const getInsightIcon = (type: AIInsight['type']) => {
     switch (type) {
       case 'opportunity': return <SparklesIcon className="h-5 w-5 text-green-400" />;
       case 'risk': return <ExclamationTriangleIcon className="h-5 w-5 text-red-400" />;
       case 'prediction': return <BoltIcon className="h-5 w-5 text-purple-400" />;
+      case 'recommendation': return <CheckCircleIcon className="h-5 w-5 text-blue-400" />;
       default: return <LightBulbIcon className="h-5 w-5 text-yellow-400" />;
     }
   };
 
-  const getInsightBgColor = (type: string) => {
+  const getInsightBgColor = (type: AIInsight['type']) => {
     switch (type) {
       case 'opportunity': return 'border-green-700/30 bg-green-900/10';
       case 'risk': return 'border-red-700/30 bg-red-900/10';
       case 'prediction': return 'border-purple-700/30 bg-purple-900/10';
+      case 'recommendation': return 'border-blue-700/30 bg-blue-900/10';
       default: return 'border-yellow-700/30 bg-yellow-900/10';
     }
   };
@@ -162,7 +181,7 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead }) => {
             </h3>
             <div className="space-y-3">
               {insights.insights && insights.insights.length > 0 ? (
-                insights.insights.map((insight: any, index: number) => (
+                insights.insights.map((insight: AIInsight, index: number) => (
                   <div key={index} className={`rounded-lg p-4 border ${getInsightBgColor(insight.type)}`}>
                     <div className="flex items-start space-x-3">
                       {getInsightIcon(insight.type)}
@@ -230,7 +249,7 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead }) => {
                   Competitive Landscape
                 </h3>
                 <div className="space-y-2">
-                  {insights.competitorAnalysis.map((item: string, index: number) => (
+                  {insights.competitorAnalysis!.map((item: string, index: number) => (
                     <div key={index} className="flex items-start space-x-2">
                       <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 flex-shrink-0" />
                       <p className="text-sm text-gray-300">{item}</p>
@@ -247,7 +266,7 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead }) => {
                   Market Trends
                 </h3>
                 <div className="space-y-2">
-                  {insights.marketTrends.map((trend: string, index: number) => (
+                  {insights.marketTrends!.map((trend: string, index: number) => (
                     <div key={index} className="flex items-start space-x-2">
                       <div className="w-2 h-2 bg-cyan-400 rounded-full mt-2 flex-shrink-0" />
                       <p className="text-sm text-gray-300">{trend}</p>

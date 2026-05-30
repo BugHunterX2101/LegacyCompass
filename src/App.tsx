@@ -54,6 +54,7 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null);
   const [useVirtualization, setUseVirtualization] = useState(false);
+  const [aiLeadSearch, setAiLeadSearch] = useState('');
 
   // Derive selectedLead from leads array so it's never stale after enrichment
   const selectedLead = useMemo(
@@ -197,6 +198,11 @@ function App() {
     setSelectedLeads(leadIds);
   }, []);
 
+  const handleSelectLeadForAI = useCallback((leadId: string) => {
+    setSelectedLeadId(leadId);
+    setActiveTab('ai-insights');
+  }, []);
+
   const topIndustries = useMemo(() => {
     const industryStats = leads.reduce((acc, lead) => {
       if (!acc[lead.industry]) {
@@ -326,13 +332,14 @@ function App() {
           <div className="space-y-6">
             <AdvancedSearch
               onSearch={handleSearch}
-              onResultsCount={() => {}}
+              onResultsCount={(count) => console.debug(`Filtered results: ${count}`)}
             />
             {useVirtualization ? (
               <VirtualizedLeadTable
                 leads={filteredLeads}
                 selectedLeads={selectedLeads}
                 onLeadSelect={handleLeadSelection}
+                onSelectLeadForAI={handleSelectLeadForAI}
                 containerHeight={600}
               />
             ) : (
@@ -340,6 +347,7 @@ function App() {
                 leads={filteredLeads}
                 selectedLeads={selectedLeads}
                 onLeadSelect={handleLeadSelection}
+                onSelectLeadForAI={handleSelectLeadForAI}
               />
             )}
           </div>
@@ -348,7 +356,7 @@ function App() {
       case 'enrichment':
         return (
           <EnrichmentPanel
-            leads={filteredLeads}
+            leads={leads}
             onEnrich={handleEnrichLead}
           />
         );
@@ -395,11 +403,7 @@ function App() {
       case 'conversation':
         return selectedLead ? (
           <ConversationIntelligence lead={selectedLead} messages={[]} />
-        ) : (
-          <div className="text-center py-12 text-gray-400">
-            Select a lead to analyze conversation intelligence
-          </div>
-        );
+        ) : null;
 
       default:
         return null;
@@ -418,7 +422,7 @@ function App() {
         {/* Navigation */}
         <nav className="bg-[#161B22] border-b border-gray-700">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex space-x-8 overflow-x-auto">
+            <div className="flex space-x-8 overflow-x-auto nav-scrollbar">
               {[
                 { id: 'home', label: 'Home', Icon: HomeIcon },
                 { id: 'dashboard', label: 'Dashboard', Icon: ChartBarIcon },
@@ -441,13 +445,13 @@ function App() {
                   <tab.Icon className="h-4 w-4" />
                   <span>{tab.label}</span>
                   {tab.id === 'leads' && filteredLeads.length > 0 && (
-                    <span className="bg-blue-600 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                    <span className="bg-blue-600/20 text-blue-300 text-xs rounded-full px-2 py-0.5 border border-blue-600/30">
                       {filteredLeads.length}
                     </span>
                   )}
                   {(tab.id === 'ai-insights' || tab.id === 'ai-email' || tab.id === 'conversation') && selectedLead && (
-                    <span className="bg-green-600 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                      1
+                    <span className="bg-green-600/20 text-green-300 text-xs rounded-full px-2 py-0.5 border border-green-600/30 max-w-[80px] truncate hidden md:inline">
+                      {selectedLead.companyName}
                     </span>
                   )}
                 </button>
@@ -460,70 +464,108 @@ function App() {
         <main className={activeTab === 'home' ? '' : 'max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8'}>
           <div key={activeTab} className="animate-fade-in-up">
             {/* Lead Selection for AI Features */}
-            {(activeTab === 'ai-insights' || activeTab === 'ai-email' || activeTab === 'conversation') && !selectedLead && (
-              <div className="mb-6 bg-[#1E2328] rounded-lg border border-gray-700 p-4">
-                <h3 className="text-lg font-semibold text-white mb-1">
-                  Select a Lead for AI Analysis
-                </h3>
-                <p className="text-sm text-gray-400 mb-3">
-                  Choose a lead to generate {activeTab === 'ai-insights' ? 'AI-powered insights' : activeTab === 'conversation' ? 'conversation intelligence' : 'personalized emails'}
-                </p>
-                <input
-                  type="text"
-                  placeholder="Search leads by name, industry, or location..."
-                  className="w-full px-3 py-2 mb-4 bg-[#0D1117] border border-gray-600 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-1">
-                  {filteredLeads.slice(0, 18).map((lead, idx) => (
-                    <button
-                      key={lead.id}
-                      onClick={() => setSelectedLeadId(lead.id)}
-                      className="p-3 bg-[#161B22] border border-gray-700 rounded-lg hover:border-blue-500 transition-all duration-200 text-left animate-fade-in-up"
-                      style={{ animationDelay: `${idx * 40}ms`, animationFillMode: 'backwards' }}
-                    >
-                      <div className="font-medium text-white truncate">{lead.companyName}</div>
-                      <div className="text-sm text-gray-400 truncate">
-                        {lead.industry} &bull; {lead.location}
+            {(activeTab === 'ai-insights' || activeTab === 'ai-email' || activeTab === 'conversation') && !selectedLead && (() => {
+              const aiQuery = aiLeadSearch.toLowerCase();
+              const aiLeads = aiQuery
+                ? leads.filter(l =>
+                    l.companyName.toLowerCase().includes(aiQuery) ||
+                    l.industry.toLowerCase().includes(aiQuery) ||
+                    l.location.toLowerCase().includes(aiQuery) ||
+                    (l.contactPerson && l.contactPerson.toLowerCase().includes(aiQuery))
+                  )
+                : leads;
+              return (
+                <div className="mb-6 bg-[#1E2328] rounded-lg border border-gray-700 p-4">
+                  <h3 className="text-lg font-semibold text-white mb-1">
+                    Select a Lead for {activeTab === 'ai-insights' ? 'AI Insights' : activeTab === 'conversation' ? 'Conversation AI' : 'AI Email Generator'}
+                  </h3>
+                  <p className="text-sm text-gray-400 mb-3">
+                    Choose a lead to generate {activeTab === 'ai-insights' ? 'AI-powered insights and recommendations' : activeTab === 'conversation' ? 'conversation intelligence analysis' : 'personalized outreach emails'}
+                  </p>
+                  <input
+                    type="text"
+                    value={aiLeadSearch}
+                    placeholder="Search leads by name, industry, or location..."
+                    className="w-full px-3 py-2 mb-4 bg-[#0D1117] border border-gray-600 rounded-md text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => setAiLeadSearch(e.target.value)}
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 max-h-80 overflow-y-auto pr-1 modal-scroll">
+                    {aiLeads.slice(0, 18).map((lead, idx) => (
+                      <button
+                        key={lead.id}
+                        onClick={() => { setSelectedLeadId(lead.id); setAiLeadSearch(''); }}
+                        className="p-3 bg-[#161B22] border border-gray-700 rounded-lg hover:border-blue-500 transition-all duration-200 text-left animate-fade-in-up"
+                        style={{ animationDelay: `${idx * 40}ms`, animationFillMode: 'backwards' }}
+                      >
+                        <div className="font-medium text-white truncate">{lead.companyName}</div>
+                        <div className="text-sm text-gray-400 truncate">
+                          {lead.industry} &bull; {lead.location}
+                        </div>
+                        <div className="flex items-center mt-1 space-x-2">
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${
+                            lead.score >= 80 ? 'bg-green-900/40 text-green-300' :
+                            lead.score >= 60 ? 'bg-yellow-900/40 text-yellow-300' :
+                            'bg-gray-700 text-gray-300'
+                          }`}>
+                            Score: {lead.score}
+                          </span>
+                          {lead.contactPerson && (
+                            <span className="text-xs text-gray-500 truncate">{lead.contactPerson}</span>
+                          )}
+                        </div>
+                      </button>
+                    ))}
+                    {aiLeads.length === 0 && (
+                      <div className="col-span-3 text-center py-6 text-gray-400">
+                        No leads match your search. Try a different query or{' '}
+                        <button
+                          className="text-blue-400 underline"
+                          onClick={() => setAiLeadSearch('')}
+                        >clear the filter</button>.
                       </div>
-                      <div className="flex items-center mt-1 space-x-2">
-                        <span className={`text-xs px-1.5 py-0.5 rounded ${
-                          lead.score >= 80 ? 'bg-green-900/40 text-green-300' :
-                          lead.score >= 60 ? 'bg-yellow-900/40 text-yellow-300' :
-                          'bg-gray-700 text-gray-300'
-                        }`}>
-                          Score: {lead.score}
-                        </span>
-                        {lead.contactPerson && (
-                          <span className="text-xs text-gray-500 truncate">{lead.contactPerson}</span>
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                  {filteredLeads.length === 0 && (
-                    <div className="col-span-3 text-center py-6 text-gray-400">
-                      No leads found. Try a different search or scrape new leads.
-                    </div>
+                    )}
+                  </div>
+                  {leads.length === 0 && (
+                    <p className="text-center text-gray-500 text-sm mt-2">
+                      No leads yet. Go to <button className="text-blue-400 underline" onClick={() => setActiveTab('leads')}>Leads</button> or use Scrape to add some.
+                    </p>
                   )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {selectedLead && (activeTab === 'ai-insights' || activeTab === 'ai-email' || activeTab === 'conversation') && (
               <div className="mb-6 bg-[#1E2328] rounded-lg border border-gray-700 p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="text-lg font-semibold text-white">{selectedLead.companyName}</h3>
-                    <p className="text-sm text-gray-400">
-                      {selectedLead.industry} / {selectedLead.location}
-                    </p>
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center flex-shrink-0">
+                      <span className="text-white font-bold text-sm">
+                        {selectedLead.companyName.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <div>
+                      <h3 className="text-base font-semibold text-white">{selectedLead.companyName}</h3>
+                      <p className="text-sm text-gray-400">
+                        {selectedLead.industry} &bull; {selectedLead.location}
+                        {selectedLead.contactPerson && <> &bull; {selectedLead.contactPerson}</>}
+                      </p>
+                    </div>
                   </div>
-                  <button
-                    onClick={() => setSelectedLeadId(null)}
-                    className="text-gray-400 hover:text-white transition-colors"
-                  >
-                    Change Lead
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      selectedLead.score >= 80 ? 'bg-green-900/40 text-green-300 border border-green-700/30' :
+                      selectedLead.score >= 60 ? 'bg-yellow-900/40 text-yellow-300 border border-yellow-700/30' :
+                      'bg-gray-700 text-gray-300 border border-gray-600/30'
+                    }`}>
+                      Score: {selectedLead.score}
+                    </span>
+                    <button
+                      onClick={() => { setSelectedLeadId(null); setAiLeadSearch(''); }}
+                      className="text-gray-400 hover:text-white text-sm transition-colors px-3 py-1.5 rounded-md hover:bg-gray-700/50 border border-gray-700 hover:border-gray-600"
+                    >
+                      Change Lead
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -546,22 +588,19 @@ function App() {
         />
 
         {/* Footer */}
-        <footer className="bg-[#161B22] border-t border-gray-700 mt-12">
-          <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+        <footer className="bg-[#161B22] border-t border-gray-700/50 mt-12">
+          <div className="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between">
-              <div className="text-sm text-gray-400">
-                Copyright {new Date().getFullYear()} LegacyCompass Lead Intelligence Platform. Built with React &amp; TypeScript.
+              <div className="text-xs text-gray-500">
+                &copy; {new Date().getFullYear()} LegacyCompass &mdash; Lead Intelligence Platform
               </div>
-              <div className="flex items-center space-x-4 text-sm text-gray-400">
-                <span>Total Leads: {leads.length}</span>
-                <span>/</span>
-                <span>Filtered: {filteredLeads.length}</span>
+              <div className="flex items-center gap-3 text-xs text-gray-500">
                 {selectedLeads.length > 0 && (
-                  <>
-                    <span>/</span>
-                    <span>Selected: {selectedLeads.length}</span>
-                  </>
+                  <span className="text-blue-400">{selectedLeads.length} selected</span>
                 )}
+                <span>{leads.length.toLocaleString()} total leads</span>
+                <span className="text-gray-600">&bull;</span>
+                <span>Built with React &amp; TypeScript</span>
               </div>
             </div>
           </div>

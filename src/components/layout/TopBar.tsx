@@ -13,6 +13,7 @@ interface TopBarProps {
 }
 
 export const TopBar: React.FC<TopBarProps> = ({ onImport, onScrape, onExport }) => {
+  const [showSettingsTooltip, setShowSettingsTooltip] = React.useState(false);
   return (
     <header className="bg-[#161B22]/95 backdrop-blur-sm border-b border-slate-700/50 sticky top-0 z-50 relative">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -66,21 +67,17 @@ export const TopBar: React.FC<TopBarProps> = ({ onImport, onScrape, onExport }) 
               title="Settings — coming soon"
               aria-label="Settings (coming soon)"
               onClick={() => {
-                const el = document.getElementById('settings-tooltip');
-                if (el) {
-                  el.classList.remove('hidden');
-                  setTimeout(() => el.classList.add('hidden'), 2000);
-                }
+                setShowSettingsTooltip(true);
+                setTimeout(() => setShowSettingsTooltip(false), 2000);
               }}
             >
               <Cog6ToothIcon className="h-5 w-5" />
             </button>
-            <span
-              id="settings-tooltip"
-              className="hidden absolute right-4 top-14 text-xs bg-gray-800 border border-gray-700 text-gray-300 px-3 py-1.5 rounded shadow-lg z-50"
-            >
-              Settings coming soon
-            </span>
+            {showSettingsTooltip && (
+              <span className="absolute right-4 top-14 text-xs bg-gray-800 border border-gray-700 text-gray-300 px-3 py-1.5 rounded shadow-lg z-50 animate-fade-in">
+                Settings coming soon
+              </span>
+            )}
           </div>
         </div>
       </div>

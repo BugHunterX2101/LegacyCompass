@@ -130,10 +130,11 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
   };
 
   const handleSelectAll = () => {
-    if (selectedLeads.length === leads.length) {
+    const incompleteIds = leads.filter(l => getEnrichmentScore(l) < 80).map(l => l.id);
+    if (selectedLeads.length === incompleteIds.length && incompleteIds.every(id => selectedLeads.includes(id))) {
       setSelectedLeads([]);
     } else {
-      setSelectedLeads(leads.map(lead => lead.id));
+      setSelectedLeads(incompleteIds);
     }
   };
 
@@ -261,12 +262,12 @@ export const EnrichmentPanel: React.FC<EnrichmentPanelProps> = ({ leads, onEnric
               <input
                 type="checkbox"
                 id="select-all-enrichment"
-                checked={selectedLeads.length === leads.length && leads.length > 0}
+                checked={(() => { const ids = leads.filter(l => getEnrichmentScore(l) < 80).map(l => l.id); return ids.length > 0 && ids.every(id => selectedLeads.includes(id)); })()}
                 onChange={handleSelectAll}
                 className="rounded border-gray-600 bg-gray-700 text-blue-600"
               />
               <label htmlFor="select-all-enrichment" className="text-sm text-gray-300 cursor-pointer">
-                Select all leads for bulk enrichment
+                Select all incomplete leads for bulk enrichment
               </label>
             </div>
             <div className="text-sm text-gray-400">{selectedLeads.length} selected</div>

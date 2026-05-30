@@ -34,9 +34,18 @@
     @apply bg-gray-500;
   }
 
+  /* Nav horizontal scrollbar */
+  .nav-scrollbar {
+    scrollbar-width: none;
+  }
+  .nav-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+
   /* Card styles */
   .card {
-    @apply bg-[#1A1F27] rounded-lg border border-slate-700/60 p-6 hover-lift;
+    @apply bg-[#1E2328] rounded-lg border border-slate-700/60 p-6 hover-lift;
   }
 
   .card-header {

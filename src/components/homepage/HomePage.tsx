@@ -231,22 +231,22 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onStartScrape, l
       <div className="relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="glow-card bg-[#1A1F27] rounded-xl p-6 border border-slate-700/50 text-center animate-bounce-in shimmer-hover" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
+            <div className="glow-card bg-[#1E2328] rounded-xl p-6 border border-slate-700/50 text-center animate-bounce-in shimmer-hover" style={{ animationDelay: '200ms', animationFillMode: 'backwards' }}>
               <div className="text-3xl font-bold text-slate-100 mb-1 animate-counter">{animatedLeadCount.toLocaleString()}</div>
               <div className="text-slate-500 text-xs font-medium uppercase tracking-wider">Active Leads</div>
             </div>
-            <div className="glow-card bg-[#1A1F27] rounded-xl p-6 border border-slate-700/50 text-center animate-bounce-in shimmer-hover" style={{ animationDelay: '350ms', animationFillMode: 'backwards' }}>
+            <div className="glow-card bg-[#1E2328] rounded-xl p-6 border border-slate-700/50 text-center animate-bounce-in shimmer-hover" style={{ animationDelay: '350ms', animationFillMode: 'backwards' }}>
               <div className="text-3xl font-bold text-slate-100 mb-1 animate-counter">{animatedIndustryCount}</div>
               <div className="text-slate-500 text-xs font-medium uppercase tracking-wider">Industries</div>
             </div>
-            <div className="glow-card bg-[#1A1F27] rounded-xl p-6 border border-slate-700/50 text-center animate-bounce-in shimmer-hover" style={{ animationDelay: '500ms', animationFillMode: 'backwards' }}>
+            <div className="glow-card bg-[#1E2328] rounded-xl p-6 border border-slate-700/50 text-center animate-bounce-in shimmer-hover" style={{ animationDelay: '500ms', animationFillMode: 'backwards' }}>
               <div className="flex items-center justify-center space-x-2 mb-1">
                 <ShieldCheckIcon className="h-6 w-6 text-teal-400" />
                 <span className="text-3xl font-bold text-slate-100">Verified</span>
               </div>
               <div className="text-slate-500 text-xs font-medium uppercase tracking-wider">Real-time Data</div>
             </div>
-            <div className="glow-card bg-[#1A1F27] rounded-xl p-6 border border-slate-700/50 text-center animate-bounce-in shimmer-hover" style={{ animationDelay: '650ms', animationFillMode: 'backwards' }}>
+            <div className="glow-card bg-[#1E2328] rounded-xl p-6 border border-slate-700/50 text-center animate-bounce-in shimmer-hover" style={{ animationDelay: '650ms', animationFillMode: 'backwards' }}>
               <div className="flex items-center justify-center space-x-2 mb-1">
                 <SparklesIcon className="h-6 w-6 text-blue-400" />
                 <span className="text-3xl font-bold text-slate-100">AI</span>
@@ -277,7 +277,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onStartScrape, l
             <button
               key={index}
               onClick={feature.action}
-              className="icon-bounce group relative bg-[#1A1F27] rounded-xl p-6 border border-slate-700/50 hover:border-slate-600/80 transition-all duration-400 hover:-translate-y-2 hover:shadow-2xl hover:shadow-black/30 animate-slide-up-spring text-left glow-card shimmer-hover"
+              className="icon-bounce group relative bg-[#1E2328] rounded-xl p-6 border border-slate-700/50 hover:border-slate-600/80 transition-all duration-400 hover:-translate-y-2 hover:shadow-2xl hover:shadow-black/30 animate-slide-up-spring text-left glow-card shimmer-hover"
               style={{ animationDelay: `${600 + index * 100}ms`, animationFillMode: 'backwards' }}
             >
               {/* Gradient overlay on hover */}
@@ -321,7 +321,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onStartScrape, l
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Mission */}
-          <div className="glow-card bg-[#1A1F27] rounded-xl p-8 border border-slate-700/50 text-center shimmer-hover">
+          <div className="glow-card bg-[#1E2328] rounded-xl p-8 border border-slate-700/50 text-center shimmer-hover">
             <div className="inline-flex p-3 rounded-xl bg-gradient-to-r from-blue-500 to-indigo-500 mb-5 shadow-lg">
               <RocketLaunchIcon className="h-6 w-6 text-white" />
             </div>
@@ -332,7 +332,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onStartScrape, l
           </div>
 
           {/* Technology */}
-          <div className="glow-card bg-[#1A1F27] rounded-xl p-8 border border-slate-700/50 text-center shimmer-hover">
+          <div className="glow-card bg-[#1E2328] rounded-xl p-8 border border-slate-700/50 text-center shimmer-hover">
             <div className="inline-flex p-3 rounded-xl bg-gradient-to-r from-cyan-500 to-teal-500 mb-5 shadow-lg">
               <CommandLineIcon className="h-6 w-6 text-white" />
             </div>
@@ -343,7 +343,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onStartScrape, l
           </div>
 
           {/* Vision */}
-          <div className="glow-card bg-[#1A1F27] rounded-xl p-8 border border-slate-700/50 text-center shimmer-hover">
+          <div className="glow-card bg-[#1E2328] rounded-xl p-8 border border-slate-700/50 text-center shimmer-hover">
             <div className="inline-flex p-3 rounded-xl bg-gradient-to-r from-purple-500 to-violet-500 mb-5 shadow-lg">
               <EyeIcon className="h-6 w-6 text-white" />
             </div>
@@ -372,7 +372,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onStartScrape, l
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Free Plan */}
-          <div className="glow-card bg-[#1A1F27] rounded-xl p-8 border border-slate-700/50 flex flex-col shimmer-hover">
+          <div className="glow-card bg-[#1E2328] rounded-xl p-8 border border-slate-700/50 flex flex-col shimmer-hover">
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-slate-100 mb-1">Starter</h3>
               <p className="text-slate-500 text-xs">Perfect for getting started</p>
@@ -398,7 +398,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onStartScrape, l
           </div>
 
           {/* Pro Plan - Highlighted */}
-          <div className="relative glow-card bg-[#1A1F27] rounded-xl p-8 border-2 border-blue-500/40 flex flex-col shimmer-hover">
+          <div className="relative glow-card bg-[#1E2328] rounded-xl p-8 border-2 border-blue-500/40 flex flex-col shimmer-hover">
             <div className="absolute -top-3 left-1/2 -translate-x-1/2">
               <span className="px-3 py-1 rounded-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-xs font-semibold shadow-lg">MOST POPULAR</span>
             </div>
@@ -427,7 +427,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onStartScrape, l
           </div>
 
           {/* Enterprise Plan */}
-          <div className="glow-card bg-[#1A1F27] rounded-xl p-8 border border-slate-700/50 flex flex-col shimmer-hover">
+          <div className="glow-card bg-[#1E2328] rounded-xl p-8 border border-slate-700/50 flex flex-col shimmer-hover">
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-slate-100 mb-1">Enterprise</h3>
               <p className="text-slate-500 text-xs">For large organizations</p>
@@ -458,7 +458,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onNavigate, onStartScrape, l
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-16">
         <div className="relative overflow-hidden rounded-2xl border border-slate-700/50 animate-fade-in-up" style={{ animationDelay: '1200ms', animationFillMode: 'backwards' }}>
           <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-indigo-600/10 to-blue-600/10 animate-gradient-x" style={{ backgroundSize: '200% 200%' }} />
-          <div className="absolute inset-0 bg-[#1A1F27]/80" />
+          <div className="absolute inset-0 bg-[#1E2328]/80" />
           <div className="relative px-8 py-10 text-center">
             <h3 className="text-xl font-bold text-slate-100 mb-3">Ready to supercharge your pipeline?</h3>
             <p className="text-slate-400 text-sm mb-6 max-w-lg mx-auto">Start scraping real companies and let AI enrich every lead with verified data.</p>

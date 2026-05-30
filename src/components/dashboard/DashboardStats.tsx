@@ -33,6 +33,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ leads }) => {
       icon: UserGroupIcon,
       color: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-500/10',
+      iconColor: 'text-blue-400',
       progress: Math.min((analytics.totalLeads / 1000) * 100, 100),
       subtitle: `${analytics.leadsByIndustry.length} industries`
     },
@@ -42,6 +43,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ leads }) => {
       icon: CheckCircleIcon,
       color: 'from-green-500 to-green-600',
       bgColor: 'bg-green-500/10',
+      iconColor: 'text-green-400',
       progress: analytics.totalLeads > 0 ? (analytics.qualifiedLeads / analytics.totalLeads) * 100 : 0,
       subtitle: `${analytics.totalLeads > 0 ? Math.round((analytics.qualifiedLeads / analytics.totalLeads) * 100) : 0}% of total`
     },
@@ -51,6 +53,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ leads }) => {
       icon: ChartBarIcon,
       color: 'from-purple-500 to-purple-600',
       bgColor: 'bg-purple-500/10',
+      iconColor: 'text-purple-400',
       progress: analytics.averageScore,
       subtitle: analytics.averageScore >= 70 ? 'Strong pipeline' : analytics.averageScore >= 50 ? 'Good pipeline' : 'Needs attention'
     },
@@ -60,6 +63,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ leads }) => {
       icon: ArrowTrendingUpIcon,
       color: 'from-orange-500 to-orange-600',
       bgColor: 'bg-orange-500/10',
+      iconColor: 'text-orange-400',
       progress: analytics.conversionRate,
       subtitle: `${leads.filter(l => l.status === 'converted').length} converted`
     }
@@ -113,7 +117,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ leads }) => {
                 <p className="text-xs text-gray-500 mt-1">{stat.subtitle}</p>
               </div>
               <div className={`p-3 rounded-lg ${stat.bgColor}`}>
-                <stat.icon className="h-6 w-6 text-white" />
+                <stat.icon className={`h-6 w-6 ${stat.iconColor}`} />
               </div>
             </div>
             

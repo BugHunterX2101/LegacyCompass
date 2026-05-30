@@ -29,16 +29,21 @@ export const NotificationContainer: React.FC = () => {
     }
   };
 
+  const getBorderColor = (type: Notification['type']) => {
+    switch (type) {
+      case 'success': return 'border-green-500/40';
+      case 'error':   return 'border-red-500/40';
+      case 'warning': return 'border-yellow-500/40';
+      case 'info':    return 'border-blue-500/40';
+    }
+  };
+
   const getBackgroundColor = (type: Notification['type']) => {
     switch (type) {
-      case 'success':
-        return 'bg-green-600';
-      case 'error':
-        return 'bg-red-600';
-      case 'warning':
-        return 'bg-yellow-600';
-      case 'info':
-        return 'bg-blue-600';
+      case 'success': return 'bg-[#1E2328]/95 backdrop-blur-sm';
+      case 'error':   return 'bg-[#1E2328]/95 backdrop-blur-sm';
+      case 'warning': return 'bg-[#1E2328]/95 backdrop-blur-sm';
+      case 'info':    return 'bg-[#1E2328]/95 backdrop-blur-sm';
     }
   };
 
@@ -49,15 +54,15 @@ export const NotificationContainer: React.FC = () => {
       {notifications.map((notification) => (
         <div
           key={notification.id}
-          className={`${getBackgroundColor(notification.type)} text-white p-4 rounded-lg shadow-lg animate-slide-in-right`}
+          className={`${getBackgroundColor(notification.type)} border ${getBorderColor(notification.type)} text-white p-4 rounded-lg shadow-2xl shadow-black/40 animate-slide-in-right`}
         >
           <div className="flex items-start">
             <div className="flex-shrink-0">
               {getIcon(notification.type)}
             </div>
             <div className="ml-3 flex-1">
-              <h4 className="text-sm font-medium">{notification.title}</h4>
-              <p className="text-sm opacity-90 mt-1">{notification.message}</p>
+              <h4 className="text-sm font-semibold text-slate-100">{notification.title}</h4>
+              <p className="text-sm text-slate-400 mt-1">{notification.message}</p>
               {notification.action && (
                 <button
                   onClick={notification.action.onClick}
