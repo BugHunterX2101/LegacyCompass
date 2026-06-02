@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, memo } from 'react';
 import { performanceService } from '../../services/performanceService';
-import { CpuChipIcon } from '@heroicons/react/24/outline';
+import { CpuChipIcon, XMarkIcon } from '@heroicons/react/24/outline';
 
-export const PerformanceMonitor: React.FC = () => {
+export const PerformanceMonitor: React.FC = memo(() => {
   const [metrics, setMetrics] = useState({
     cacheSize: 0,
     queueLength: 0,
@@ -15,7 +15,12 @@ export const PerformanceMonitor: React.FC = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       const newMetrics = performanceService.getPerformanceMetrics();
-      setMetrics({ ...newMetrics, memoryUsage: newMetrics.memoryUsage ?? 0 });
+      setMetrics({
+        cacheSize: newMetrics.cacheSize,
+        queueLength: newMetrics.queueLength,
+        currentRequests: newMetrics.currentRequests,
+        memoryUsage: newMetrics.memoryUsage ?? 0
+      });
     }, 5000);
     return () => clearInterval(interval);
   }, []);
@@ -24,7 +29,7 @@ export const PerformanceMonitor: React.FC = () => {
     return (
       <button
         onClick={() => setVisible(true)}
-        className="fixed bottom-4 right-4 bg-[#1E2328] border border-gray-700 rounded-lg p-2 text-xs z-50 text-gray-400 hover:text-white transition-colors"
+        className="fixed bottom-20 right-4 bg-[#1E2328] border border-gray-700 rounded-lg p-2 text-xs z-40 text-gray-400 hover:text-white transition-colors shadow-lg"
         title="Show performance monitor"
       >
         <CpuChipIcon className="h-4 w-4" />
@@ -33,7 +38,7 @@ export const PerformanceMonitor: React.FC = () => {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 bg-[#1E2328] border border-gray-700 rounded-lg text-xs z-50 shadow-lg">
+    <div className="fixed bottom-20 right-4 bg-[#1E2328] border border-gray-700 rounded-lg text-xs z-40 shadow-lg min-w-[120px]">
       <div className="flex items-center justify-between px-3 py-2 border-b border-gray-700/60">
         <button
           onClick={() => setExpanded(e => !e)}
@@ -41,38 +46,42 @@ export const PerformanceMonitor: React.FC = () => {
           title={expanded ? "Collapse" : "Expand"}
         >
           <CpuChipIcon className="h-3.5 w-3.5" />
-          Perf
+          <span>Perf</span>
         </button>
         <button
           onClick={() => setVisible(false)}
-          className="ml-3 text-gray-500 hover:text-gray-300 transition-colors leading-none"
+          className="ml-3 text-gray-500 hover:text-gray-300 transition-colors"
           title="Hide monitor"
         >
-          ✕
+          <XMarkIcon className="h-3.5 w-3.5" />
         </button>
       </div>
       {expanded && (
         <div className="px-3 py-2 space-y-1 text-gray-400">
           <div className="flex items-center justify-between gap-4">
             <span>Cache:</span>
-            <span className="text-white">{metrics.cacheSize}</span>
+            <span className="text-white font-mono">{metrics.cacheSize}</span>
           </div>
           <div className="flex items-center justify-between gap-4">
             <span>Queue:</span>
-            <span className="text-white">{metrics.queueLength}</span>
+            <span className="text-white font-mono">{metrics.queueLength}</span>
           </div>
           <div className="flex items-center justify-between gap-4">
-            <span>Requests:</span>
-            <span className="text-white">{metrics.currentRequests}</span>
+            <span>Reqs:</span>
+            <span className="text-white font-mono">{metrics.currentRequests}</span>
           </div>
           {metrics.memoryUsage > 0 && (
             <div className="flex items-center justify-between gap-4">
-              <span>Memory:</span>
-              <span className="text-white">{metrics.memoryUsage.toFixed(1)}MB</span>
+              <span>Mem:</span>
+              <span className={`font-mono ${metrics.memoryUsage > 200 ? 'text-yellow-400' : 'text-white'}`}>
+                {metrics.memoryUsage.toFixed(0)}MB
+              </span>
             </div>
           )}
         </div>
       )}
     </div>
   );
-};
+});
+
+PerformanceMonitor.displayName = 'PerformanceMonitor';

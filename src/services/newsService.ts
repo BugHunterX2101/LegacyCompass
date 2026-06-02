@@ -13,6 +13,7 @@ export interface NewsArticle {
 interface NewsResponse {
   totalArticles: number;
   articles: NewsArticle[];
+  error?: string;
 }
 
 const CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
@@ -28,6 +29,11 @@ function getCached(key: string): NewsArticle[] | null {
 }
 
 function setCache(key: string, data: NewsArticle[]) {
+  // Limit cache size to prevent memory bloat
+  if (cache.size > 50) {
+    const firstKey = cache.keys().next().value;
+    if (firstKey) cache.delete(firstKey);
+  }
   cache.set(key, { data, timestamp: Date.now() });
 }
 
@@ -37,7 +43,6 @@ export async function fetchNews(query: string, maxResults = 10, country?: string
   if (cached) return cached;
 
   try {
-    // Always use the server proxy to avoid CORS issues
     const params = new URLSearchParams({
       q: query,
       lang: 'en',
@@ -48,23 +53,38 @@ export async function fetchNews(query: string, maxResults = 10, country?: string
     }
     const url = `/api/news?${params}`;
 
-    console.log('[NewsService] Fetching:', url);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
 
-    const response = await fetch(url);
+    const response = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
 
     if (!response.ok) {
       const body = await response.text().catch(() => '');
       console.error(`[NewsService] API error ${response.status}:`, body);
-      throw new Error(`News API error: ${response.status}`);
+      return [];
     }
 
     const data: NewsResponse = await response.json();
-    const articles = data.articles || [];
+
+    if (data.error) {
+      console.warn('[NewsService] API returned error:', data.error);
+      return [];
+    }
+
+    const articles = (data.articles || []).filter(
+      a => a && a.title && a.url
+    );
+
     console.log(`[NewsService] Got ${articles.length} articles for "${query}"`);
     setCache(cacheKey, articles);
     return articles;
   } catch (error) {
-    console.error('[NewsService] Failed to fetch news:', error);
+    if (error instanceof Error && error.name === 'AbortError') {
+      console.warn('[NewsService] Request timed out for query:', query);
+    } else {
+      console.error('[NewsService] Failed to fetch news:', error);
+    }
     return [];
   }
 }
@@ -75,4 +95,8 @@ export async function fetchIndustryNews(industry: string): Promise<NewsArticle[]
 
 export async function fetchCompanyNews(companyName: string): Promise<NewsArticle[]> {
   return fetchNews(companyName, 5);
+}
+
+export function clearNewsCache(): void {
+  cache.clear();
 }

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useCallback, useRef, useEffect, memo } from 'react';
 import { SearchFilter } from '../../types';
 import { SearchDropdown } from '../common/SearchDropdown';
 import { MagnifyingGlassIcon, XMarkIcon, PlusIcon } from '@heroicons/react/24/outline';
@@ -41,20 +41,28 @@ const locations = [
 
 const statuses = ['new', 'contacted', 'qualified', 'converted', 'rejected'];
 
-export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResultsCount }) => {
+export const AdvancedSearch: React.FC<AdvancedSearchProps> = memo(({ onSearch, onResultsCount }) => {
   const [query, setQuery] = useState('');
   const [filters, setFilters] = useState<SearchFilter[]>([]);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Use refs to avoid stale closure issues without adding callbacks to dep array
+  // Use stable refs to avoid stale closures
   const onSearchRef = useRef(onSearch);
   const onResultsCountRef = useRef(onResultsCount);
+
   useEffect(() => { onSearchRef.current = onSearch; }, [onSearch]);
   useEffect(() => { onResultsCountRef.current = onResultsCount; }, [onResultsCount]);
 
-  // Fire search whenever filters or query change - using refs to avoid infinite loops
+  // Debounce search calls to avoid firing on every keystroke
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>();
+
   useEffect(() => {
-    onSearchRef.current(filters, query);
+    clearTimeout(searchTimerRef.current);
+    searchTimerRef.current = setTimeout(() => {
+      onSearchRef.current(filters, query);
+    }, 150);
+
+    return () => clearTimeout(searchTimerRef.current);
   }, [filters, query]);
 
   const addFilter = useCallback(() => {
@@ -85,6 +93,11 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
     setFilters(prev => prev.filter((_, i) => i !== index));
   }, []);
 
+  const clearAllFilters = useCallback(() => {
+    setFilters([]);
+    setQuery('');
+  }, []);
+
   const getSuggestions = (field: string): string[] => {
     switch (field) {
       case 'industry': return industries;
@@ -104,11 +117,6 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
         return 'text';
     }
   };
-
-  const clearAllFilters = useCallback(() => {
-    setFilters([]);
-    setQuery('');
-  }, []);
 
   return (
     <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
@@ -140,12 +148,13 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           placeholder="Search companies, industries, locations..."
-          className="w-full pl-10 pr-4 py-3 bg-[#0D1117] border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full pl-10 pr-10 py-3 bg-[#0D1117] border border-gray-600 rounded-md text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         {query && (
           <button
             onClick={() => setQuery('')}
             className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-white transition-colors"
+            aria-label="Clear search"
           >
             <XMarkIcon className="h-4 w-4" />
           </button>
@@ -171,7 +180,6 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
               key={index}
               className="grid grid-cols-1 md:grid-cols-4 gap-3 p-4 bg-[#161B22] rounded-lg border border-gray-700"
             >
-              {/* Field Selection */}
               <div>
                 <label className="block text-xs font-medium text-gray-400 mb-1">Field</label>
                 <select
@@ -185,7 +193,6 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
                 </select>
               </div>
 
-              {/* Operator Selection */}
               <div>
                 <label className="block text-xs font-medium text-gray-400 mb-1">Operator</label>
                 <select
@@ -199,7 +206,6 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
                 </select>
               </div>
 
-              {/* Value Input */}
               <div>
                 <label className="block text-xs font-medium text-gray-400 mb-1">Value</label>
                 {getSuggestions(filter.field).length > 0 ? (
@@ -221,12 +227,12 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
                 )}
               </div>
 
-              {/* Remove Button */}
               <div className="flex items-end">
                 <button
                   onClick={() => removeFilter(index)}
                   className="p-2 text-red-400 hover:text-red-300 hover:bg-red-400/10 rounded-md transition-colors"
                   title="Remove filter"
+                  aria-label="Remove filter"
                 >
                   <XMarkIcon className="h-4 w-4" />
                 </button>
@@ -257,6 +263,7 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
                 <button
                   onClick={() => removeFilter(index)}
                   className="ml-2 text-blue-300 hover:text-white transition-colors"
+                  aria-label="Remove filter"
                 >
                   <XMarkIcon className="h-3 w-3" />
                 </button>
@@ -267,4 +274,6 @@ export const AdvancedSearch: React.FC<AdvancedSearchProps> = ({ onSearch, onResu
       )}
     </div>
   );
-};
+});
+
+AdvancedSearch.displayName = 'AdvancedSearch';

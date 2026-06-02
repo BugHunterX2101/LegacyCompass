@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  ChartBarIcon, 
-  LightBulbIcon, 
+import React, { useState, useEffect, useCallback } from 'react';
+import {
+  ChartBarIcon,
+  LightBulbIcon,
   ArrowTrendingUpIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
@@ -39,26 +39,28 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const generateInsights = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        setInsights(null);
-        const aiInsights = await aiService.analyzeLeadWithAI(lead);
-        setInsights(aiInsights);
-      } catch (err) {
-        console.error('Failed to generate AI insights:', err);
-        setError('Failed to generate insights. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const generateInsights = useCallback(async (targetLead: Lead) => {
+    try {
+      setLoading(true);
+      setError(null);
+      setInsights(null);
+      const aiInsights = await aiService.analyzeLeadWithAI(targetLead);
+      setInsights(aiInsights);
+    } catch (err) {
+      console.error('Failed to generate AI insights:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate insights. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-    generateInsights();
-  // Only re-fetch when lead identity or its last-updated timestamp changes
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lead.id, lead.updatedAt]);
+  useEffect(() => {
+    generateInsights(lead);
+  }, [lead.id, lead.updatedAt, generateInsights]);
+
+  const handleRetry = useCallback(() => {
+    generateInsights(lead);
+  }, [lead, generateInsights]);
 
   const getInsightIcon = (type: AIInsight['type']) => {
     switch (type) {
@@ -105,7 +107,7 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead }) => {
           <ExclamationTriangleIcon className="h-12 w-12 text-red-400 mx-auto mb-3" />
           <p className="text-red-400 mb-4">{error}</p>
           <button
-            onClick={() => { setError(null); setLoading(true); aiService.analyzeLeadWithAI(lead).then(setInsights).catch(e => setError(e.message || 'Failed')).finally(() => setLoading(false)); }}
+            onClick={handleRetry}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-sm"
           >
             Retry Analysis
@@ -219,7 +221,6 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead }) => {
 
           {/* Recommendations & Approach */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Recommended Approach */}
             <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
                 <ArrowTrendingUpIcon className="h-5 w-5 mr-2 text-green-500" />
@@ -228,7 +229,6 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead }) => {
               <p className="text-gray-300 text-sm leading-relaxed">{insights.recommendedApproach}</p>
             </div>
 
-            {/* Action Items */}
             <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
               <h3 className="text-lg font-semibold text-white mb-3 flex items-center">
                 <CheckCircleIcon className="h-5 w-5 mr-2 text-blue-500" />
@@ -258,7 +258,7 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead }) => {
                   Competitive Landscape
                 </h3>
                 <div className="space-y-2">
-                  {insights.competitorAnalysis!.map((item: string, index: number) => (
+                  {insights.competitorAnalysis.map((item: string, index: number) => (
                     <div key={index} className="flex items-start space-x-2">
                       <div className="w-2 h-2 bg-orange-400 rounded-full mt-2 flex-shrink-0" />
                       <p className="text-sm text-gray-300">{item}</p>
@@ -275,7 +275,7 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({ lead }) => {
                   Market Trends
                 </h3>
                 <div className="space-y-2">
-                  {insights.marketTrends!.map((trend: string, index: number) => (
+                  {insights.marketTrends.map((trend: string, index: number) => (
                     <div key={index} className="flex items-start space-x-2">
                       <div className="w-2 h-2 bg-cyan-400 rounded-full mt-2 flex-shrink-0" />
                       <p className="text-sm text-gray-300">{trend}</p>

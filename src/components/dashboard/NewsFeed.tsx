@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, memo } from 'react';
 import { NewspaperIcon, ArrowTopRightOnSquareIcon } from '@heroicons/react/24/outline';
 import { fetchNews, NewsArticle } from '../../services/newsService';
 
@@ -9,7 +9,7 @@ interface NewsFeedProps {
   country?: string;
 }
 
-export const NewsFeed: React.FC<NewsFeedProps> = ({
+export const NewsFeed: React.FC<NewsFeedProps> = memo(({
   query = 'business technology',
   title = 'Industry News',
   maxResults = 5,
@@ -18,36 +18,55 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({
   const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
+  const abortRef = useRef<boolean>(false);
 
   useEffect(() => {
-    let cancelled = false;
+    abortRef.current = false;
+    let isMounted = true;
 
     const load = async () => {
+      if (!isMounted) return;
       setLoading(true);
       setError(false);
+
       try {
         let data = await fetchNews(query, maxResults, country);
+
+        if (!isMounted || abortRef.current) return;
+
         // Fallback: if no results with country filter, try without
         if (data.length === 0 && country) {
-          console.log(`[NewsFeed] No results for "${query}" in ${country}, retrying without country filter`);
           data = await fetchNews(query, maxResults);
         }
-        // Fallback: if still no results, try simplified query
+
+        if (!isMounted || abortRef.current) return;
+
+        // Fallback: simplified query
         if (data.length === 0 && query.includes(' ')) {
           const simplified = query.split(' ').slice(0, 2).join(' ');
-          console.log(`[NewsFeed] No results for "${query}", retrying with "${simplified}"`);
           data = await fetchNews(simplified, maxResults);
         }
-        if (!cancelled) setArticles(data);
+
+        if (!isMounted || abortRef.current) return;
+
+        setArticles(data);
       } catch {
-        if (!cancelled) setError(true);
+        if (isMounted && !abortRef.current) {
+          setError(true);
+        }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (isMounted && !abortRef.current) {
+          setLoading(false);
+        }
       }
     };
 
     load();
-    return () => { cancelled = true; };
+
+    return () => {
+      isMounted = false;
+      abortRef.current = true;
+    };
   }, [query, maxResults, country]);
 
   if (loading) {
@@ -80,7 +99,9 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({
           <NewspaperIcon className="h-5 w-5 mr-2 text-blue-400" />
           {title}
         </h3>
-        <p className="text-gray-400 text-sm">No news articles available right now.</p>
+        <p className="text-gray-400 text-sm">
+          {error ? 'Failed to load news. Check your GNews API key.' : 'No news articles available right now.'}
+        </p>
       </div>
     );
   }
@@ -94,7 +115,7 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({
       <div className="space-y-4">
         {articles.map((article, i) => (
           <a
-            key={i}
+            key={`${article.url}-${i}`}
             href={article.url}
             target="_blank"
             rel="noopener noreferrer"
@@ -108,7 +129,10 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({
                 className="w-16 h-16 rounded object-cover flex-shrink-0 bg-gray-700"
                 loading="lazy"
                 referrerPolicy="no-referrer"
-                onError={(e) => { const t = e.target as HTMLImageElement; t.style.display = 'none'; t.parentElement && (t.parentElement.style.display = 'none'); }}
+                onError={(e) => {
+                  const t = e.target as HTMLImageElement;
+                  t.style.display = 'none';
+                }}
               />
             )}
             <div className="flex-1 min-w-0">
@@ -132,4 +156,6 @@ export const NewsFeed: React.FC<NewsFeedProps> = ({
       </div>
     </div>
   );
-};
+});
+
+NewsFeed.displayName = 'NewsFeed';

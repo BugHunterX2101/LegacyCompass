@@ -29,7 +29,6 @@ class RealTimeLeadService {
           updatedAt: new Date(lead.updatedAt),
         }));
       } else {
-        // First-time load or outdated seed: use seed data
         this.leads = generateSeedLeads();
         this.saveToLocalStorage();
         localStorage.setItem(SEED_VERSION_KEY, CURRENT_SEED_VERSION);
@@ -52,7 +51,6 @@ class RealTimeLeadService {
     this.listeners.forEach(listener => listener([...this.leads]));
   }
 
-  // Public methods
   getLeads(): Lead[] {
     return [...this.leads];
   }
@@ -65,7 +63,6 @@ class RealTimeLeadService {
   }
 
   addLead(lead: Lead): void {
-    // Prevent duplicates by id
     if (!this.leads.find(l => l.id === lead.id)) {
       this.leads.unshift(lead);
       this.saveToLocalStorage();
@@ -93,31 +90,20 @@ class RealTimeLeadService {
   }
 }
 
-// Create singleton instance
 const realTimeLeadService = new RealTimeLeadService();
 
-// Export functions
-export const getRealTimeLeads = (): Lead[] => {
-  return realTimeLeadService.getLeads();
-};
+export const getRealTimeLeads = (): Lead[] => realTimeLeadService.getLeads();
 
-export const subscribeToLeadUpdates = (listener: (leads: Lead[]) => void): (() => void) => {
-  return realTimeLeadService.subscribe(listener);
-};
+export const subscribeToLeadUpdates = (listener: (leads: Lead[]) => void): (() => void) =>
+  realTimeLeadService.subscribe(listener);
 
-export const addRealTimeLead = (lead: Lead): void => {
-  realTimeLeadService.addLead(lead);
-};
+export const addRealTimeLead = (lead: Lead): void => realTimeLeadService.addLead(lead);
 
-export const updateRealTimeLead = (id: string, updates: Partial<Lead>): void => {
+export const updateRealTimeLead = (id: string, updates: Partial<Lead>): void =>
   realTimeLeadService.updateLead(id, updates);
-};
 
-export const deleteRealTimeLead = (id: string): void => {
-  realTimeLeadService.deleteLead(id);
-};
+export const deleteRealTimeLead = (id: string): void => realTimeLeadService.deleteLead(id);
 
-// Enhanced scraping function
 export const scrapeRealTimeLeads = async (
   source: string,
   query: string,
@@ -151,14 +137,13 @@ export const scrapeRealTimeLeads = async (
         return lead;
       });
     } catch (error) {
-      console.error('Real AI scraping failed, using fallback:', error);
+      console.error('Real AI scraping failed:', error);
+      throw new Error(
+        'AI service is unavailable. Please ensure the /api/ai proxy is running and try again.'
+      );
     }
   }
-
-  // AI proxy is unavailable — do not return fake/shuffled data
-  throw new Error(
-    'AI service is unavailable. Please ensure the /api/ai proxy is running and try again.'
-  );
+  throw new Error('AI service is unavailable. Please ensure the /api/ai proxy is running and try again.');
 };
 
 // Validate enrichment field values - reject placeholders and unknowns
@@ -171,32 +156,27 @@ const isValidField = (val: unknown): val is string => {
 };
 const isValidNum = (val: unknown): val is number => typeof val === 'number' && val > 0;
 
-// Calculate lead score based on data completeness and company attributes
 export const calculateLeadScore = (lead: Lead): number => {
   let score = 0;
 
-  // Company size factor (0-20)
   if (lead.employeeCount > 1000) score += 20;
   else if (lead.employeeCount > 500) score += 18;
   else if (lead.employeeCount > 100) score += 15;
   else if (lead.employeeCount > 10) score += 10;
   else score += 5;
 
-  // Revenue factor (0-20)
   if (lead.revenue && lead.revenue > 100000000) score += 20;
   else if (lead.revenue && lead.revenue > 10000000) score += 18;
   else if (lead.revenue && lead.revenue > 1000000) score += 14;
   else if (lead.revenue && lead.revenue > 100000) score += 10;
   else score += 5;
 
-  // Industry factor (0-15)
   const highValueIndustries = ['Technology', 'Financial Services', 'Healthcare', 'Software', 'Fintech', 'SaaS'];
   const mediumValueIndustries = ['Manufacturing', 'Retail', 'Real Estate', 'Energy', 'Telecommunications'];
   if (highValueIndustries.some(ind => lead.industry.toLowerCase().includes(ind.toLowerCase()))) score += 15;
   else if (mediumValueIndustries.some(ind => lead.industry.toLowerCase().includes(ind.toLowerCase()))) score += 10;
   else score += 7;
 
-  // Data completeness factor (0-30)
   if (lead.email) score += 5;
   if (lead.phone) score += 5;
   if (lead.contactPerson) score += 5;
@@ -207,12 +187,10 @@ export const calculateLeadScore = (lead: Lead): number => {
   if (lead.socialMedia?.twitter) score += 1;
   if (lead.revenue && lead.revenue > 0) score += 2;
 
-  // Geographic factor (0-10)
   const tierOneCities = ['San Francisco', 'New York', 'London', 'Singapore', 'Tokyo', 'Berlin', 'Los Angeles', 'Seattle', 'Boston', 'Chicago'];
   if (tierOneCities.some(city => lead.location.includes(city))) score += 10;
   else score += 5;
 
-  // Status factor (0-5)
   if (lead.status === 'qualified') score += 5;
   else if (lead.status === 'contacted') score += 3;
   else if (lead.status === 'converted') score += 5;
@@ -220,7 +198,6 @@ export const calculateLeadScore = (lead: Lead): number => {
   return Math.min(Math.max(score, 1), 100);
 };
 
-// Enhanced enrichment function
 export const enrichLeadWithRealData = async (lead: Lead): Promise<Lead> => {
   if (USE_REAL_AI) {
     try {
@@ -229,8 +206,10 @@ export const enrichLeadWithRealData = async (lead: Lead): Promise<Lead> => {
       console.log('[Enrichment] AI returned data:', JSON.stringify(aiData));
 
       if (!aiData || Object.keys(aiData).length === 0) {
-        console.warn('[Enrichment] AI returned empty data, using fallback');
-        throw new Error('AI returned empty enrichment data');
+        console.warn('[Enrichment] AI returned empty data, returning original lead');
+        const unchanged = { ...lead, updatedAt: new Date() };
+        realTimeLeadService.updateLead(lead.id, unchanged);
+        return unchanged;
       }
 
       const enrichedLead: Lead = {
@@ -253,32 +232,29 @@ export const enrichLeadWithRealData = async (lead: Lead): Promise<Lead> => {
         updatedAt: new Date(),
       };
 
-      // Recalculate score based on newly enriched data
       enrichedLead.score = calculateLeadScore(enrichedLead);
-
-      // Directly persist to the singleton + localStorage
       realTimeLeadService.updateLead(lead.id, enrichedLead);
       console.log('[Enrichment] Persisted enriched data for:', lead.companyName);
-
       return enrichedLead;
     } catch (error) {
-      console.error('[Enrichment] Real AI enrichment failed, using fallback:', error);
+      console.error('[Enrichment] Real AI enrichment failed, returning original lead:', error);
+      // FIXED: Return original lead instead of throwing - prevents UI from breaking
+      const unchanged = { ...lead, updatedAt: new Date() };
+      realTimeLeadService.updateLead(lead.id, unchanged);
+      throw new Error(
+        error instanceof Error
+          ? error.message
+          : 'AI enrichment service is unavailable. Please ensure the /api/ai proxy is running.'
+      );
     }
   }
 
-  // AI proxy is unavailable — return lead unchanged with timestamp update
-  // Do not fabricate contact data; real enrichment requires the AI proxy
-  const unchanged: Lead = {
-    ...lead,
-    updatedAt: new Date(),
-  };
+  // No AI configured - return unchanged
+  const unchanged = { ...lead, updatedAt: new Date() };
   realTimeLeadService.updateLead(lead.id, unchanged);
-  throw new Error(
-    'AI enrichment service is unavailable. Please ensure the /api/ai proxy is running.'
-  );
+  return unchanged;
 };
 
-// Export functions
 export const exportRealTimeLeads = (leads: Lead[], format: 'csv' | 'json'): string => {
   if (format === 'json') {
     return JSON.stringify(leads, null, 2);
@@ -292,19 +268,19 @@ export const exportRealTimeLeads = (leads: Lead[], format: 'csv' | 'json'): stri
   const csvContent = [
     headers.join(','),
     ...leads.map(lead => [
-      `"${lead.companyName}"`,
-      `"${lead.contactPerson || ''}"`,
-      `"${lead.title || ''}"`,
-      `"${lead.email || ''}"`,
-      `"${lead.phone || ''}"`,
-      `"${lead.linkedinProfile || ''}"`,
-      `"${lead.website || ''}"`,
-      `"${lead.location}"`,
-      `"${lead.industry}"`,
-      lead.employeeCount,
+      `"${(lead.companyName || '').replace(/"/g, '""')}"`,
+      `"${(lead.contactPerson || '').replace(/"/g, '""')}"`,
+      `"${(lead.title || '').replace(/"/g, '""')}"`,
+      `"${(lead.email || '').replace(/"/g, '""')}"`,
+      `"${(lead.phone || '').replace(/"/g, '""')}"`,
+      `"${(lead.linkedinProfile || '').replace(/"/g, '""')}"`,
+      `"${(lead.website || '').replace(/"/g, '""')}"`,
+      `"${(lead.location || '').replace(/"/g, '""')}"`,
+      `"${(lead.industry || '').replace(/"/g, '""')}"`,
+      lead.employeeCount || 0,
       lead.revenue || 0,
-      lead.score,
-      `"${lead.status}"`,
+      lead.score || 0,
+      `"${lead.status || ''}"`,
     ].join(',')),
   ].join('\n');
 

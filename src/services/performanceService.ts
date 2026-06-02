@@ -1,283 +1,164 @@
-// Performance optimization service for handling high traffic
 class PerformanceService {
-  private cache = new Map<string, { data: any; timestamp: number; ttl: number }>();
-  private requestQueue: Array<{ id: string; request: () => Promise<any>; resolve: (value: any) => void; reject: (error: any) => void }> = [];
+  private cache = new Map<string, { data: unknown; timestamp: number; ttl: number }>();
+  private requestQueue: Array<{
+    id: string;
+    request: () => Promise<unknown>;
+    resolve: (value: unknown) => void;
+    reject: (error: unknown) => void;
+  }> = [];
   private isProcessing = false;
-  private maxConcurrentRequests = 20; // Increased for better throughput
+  private maxConcurrentRequests = 20;
   private currentRequests = 0;
-
-  // Debounced function cache
-  private debouncedFunctions = new Map<string, (...args: any[]) => void>();
-
-  // Memory management
-  private maxCacheSize = 5000; // Increased cache size for large datasets
-  private cleanupInterval: NodeJS.Timeout;
+  private maxCacheSize = 5000;
+  private cleanupInterval: ReturnType<typeof setInterval>;
 
   constructor() {
-    // Cleanup cache every 5 minutes
-    this.cleanupInterval = setInterval(() => {
-      this.cleanupCache();
-    }, 5 * 60 * 1000);
-
-    // Monitor memory usage
+    this.cleanupInterval = setInterval(() => this.cleanupCache(), 5 * 60 * 1000);
     this.monitorMemoryUsage();
   }
 
-  // Intelligent caching with TTL
-  setCache(key: string, data: any, ttl: number = 5 * 60 * 1000): void {
-    // Remove oldest entries if cache is full
+  setCache(key: string, data: unknown, ttl: number = 5 * 60 * 1000): void {
     if (this.cache.size >= this.maxCacheSize) {
       const oldestKey = this.cache.keys().next().value;
       if (oldestKey !== undefined) this.cache.delete(oldestKey);
     }
-
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now(),
-      ttl
-    });
+    this.cache.set(key, { data, timestamp: Date.now(), ttl });
   }
 
-  getCache(key: string): any | null {
+  getCache(key: string): unknown | null {
     const cached = this.cache.get(key);
     if (!cached) return null;
-
-    // Check if cache has expired
     if (Date.now() - cached.timestamp > cached.ttl) {
       this.cache.delete(key);
       return null;
     }
-
     return cached.data;
   }
 
-  // Request queuing for rate limiting
   async queueRequest<T>(id: string, request: () => Promise<T>): Promise<T> {
     return new Promise((resolve, reject) => {
-      this.requestQueue.push({ id, request, resolve, reject });
+      this.requestQueue.push({
+        id,
+        request: request as () => Promise<unknown>,
+        resolve: resolve as (value: unknown) => void,
+        reject,
+      });
       this.processQueue();
     });
   }
 
   private async processQueue(): Promise<void> {
-    if (this.isProcessing || this.currentRequests >= this.maxConcurrentRequests) {
-      return;
-    }
-
+    if (this.isProcessing || this.currentRequests >= this.maxConcurrentRequests) return;
     this.isProcessing = true;
 
     while (this.requestQueue.length > 0 && this.currentRequests < this.maxConcurrentRequests) {
       const queueItem = this.requestQueue.shift();
       if (!queueItem) break;
-
       this.currentRequests++;
-
-      // Process request
       queueItem.request()
-        .then(result => {
-          queueItem.resolve(result);
-        })
-        .catch(error => {
-          queueItem.reject(error);
-        })
+        .then(result => queueItem.resolve(result))
+        .catch(error => queueItem.reject(error))
         .finally(() => {
           this.currentRequests--;
-          // Continue processing queue
-          if (this.requestQueue.length > 0) {
-            setTimeout(() => this.processQueue(), 10);
-          }
+          if (this.requestQueue.length > 0) setTimeout(() => this.processQueue(), 10);
         });
     }
-
     this.isProcessing = false;
   }
 
-  // Debounce function for search and filtering
-  debounce<T extends (...args: any[]) => void>(
-    key: string,
-    func: T,
-    delay: number = 300
-  ): T {
-    if (this.debouncedFunctions.has(key)) {
-      return this.debouncedFunctions.get(key) as T;
-    }
-
-    let timeoutId: NodeJS.Timeout;
-    const debouncedFunc = ((...args: any[]) => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(() => func(...args), delay);
-    }) as T;
-
-    this.debouncedFunctions.set(key, debouncedFunc);
-    return debouncedFunc;
-  }
-
-  // Throttle function for high-frequency events
-  throttle<T extends (...args: any[]) => void>(
-    func: T,
-    limit: number = 100
-  ): T {
-    let inThrottle: boolean;
-    return ((...args: any[]) => {
-      if (!inThrottle) {
-        func(...args);
-        inThrottle = true;
-        setTimeout(() => inThrottle = false, limit);
-      }
-    }) as T;
-  }
-
-  // Virtual scrolling for large datasets
   calculateVisibleItems(
     scrollTop: number,
     containerHeight: number,
     itemHeight: number,
     totalItems: number
   ): { startIndex: number; endIndex: number; visibleItems: number } {
-    const startIndex = Math.floor(scrollTop / itemHeight);
+    if (totalItems === 0) return { startIndex: 0, endIndex: -1, visibleItems: 0 };
+    const startIndex = Math.max(0, Math.floor(scrollTop / itemHeight) - 5);
     const visibleItems = Math.ceil(containerHeight / itemHeight);
-    const endIndex = Math.min(startIndex + visibleItems + 5, totalItems - 1); // Buffer of 5 items
-
+    const endIndex = Math.min(totalItems - 1, startIndex + visibleItems + 10);
     return { startIndex, endIndex, visibleItems };
   }
 
-  // Lazy loading implementation
   createIntersectionObserver(
     callback: (entries: IntersectionObserverEntry[]) => void,
     options: IntersectionObserverInit = {}
   ): IntersectionObserver {
-    const defaultOptions = {
-      root: null,
-      rootMargin: '50px',
-      threshold: 0.1,
-      ...options
-    };
-
-    return new IntersectionObserver(callback, defaultOptions);
+    return new IntersectionObserver(callback, { root: null, rootMargin: '50px', threshold: 0.1, ...options });
   }
 
-  // Memory usage monitoring
   private monitorMemoryUsage(): void {
-    if ('memory' in performance) {
-      setInterval(() => {
-        const memory = (performance as any).memory;
-        const usedMB = memory.usedJSHeapSize / 1024 / 1024;
-        const totalMB = memory.totalJSHeapSize / 1024 / 1024;
-        
-        // If memory usage is high, trigger cleanup
-        if (usedMB / totalMB > 0.8) {
-          this.emergencyCleanup();
-        }
-      }, 30000); // Check every 30 seconds
-    }
+    if (!('memory' in performance)) return;
+    setInterval(() => {
+      const memory = (performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number } }).memory;
+      if (!memory) return;
+      if (memory.usedJSHeapSize / memory.totalJSHeapSize > 0.8) {
+        this.emergencyCleanup();
+      }
+    }, 30000);
   }
 
-  // Cache cleanup
   private cleanupCache(): void {
     const now = Date.now();
-    const keysToDelete: string[] = [];
-
     for (const [key, value] of this.cache.entries()) {
-      if (now - value.timestamp > value.ttl) {
-        keysToDelete.push(key);
-      }
+      if (now - value.timestamp > value.ttl) this.cache.delete(key);
     }
-
-    keysToDelete.forEach(key => this.cache.delete(key));
   }
 
-  // Emergency cleanup for memory pressure
   private emergencyCleanup(): void {
-    // Clear half of the cache
     const keys = Array.from(this.cache.keys());
-    const keysToDelete = keys.slice(0, Math.floor(keys.length / 2));
-    keysToDelete.forEach(key => this.cache.delete(key));
-
-    // Clear debounced functions
-    this.debouncedFunctions.clear();
-
-    console.warn('Emergency cleanup performed due to high memory usage');
+    keys.slice(0, Math.floor(keys.length / 2)).forEach(k => this.cache.delete(k));
+    console.warn('Emergency cache cleanup performed due to high memory usage');
   }
 
-  // Batch processing for bulk operations
   async batchProcess<T, R>(
     items: T[],
     processor: (item: T) => Promise<R>,
-    batchSize: number = 10,
-    delay: number = 100
+    batchSize = 10,
+    delay = 100
   ): Promise<R[]> {
     const results: R[] = [];
-    
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize);
-      const batchPromises = batch.map(item => processor(item));
-      
       try {
-        const batchResults = await Promise.all(batchPromises);
+        const batchResults = await Promise.all(batch.map(item => processor(item)));
         results.push(...batchResults);
-        
-        // Add delay between batches to prevent overwhelming the system
         if (i + batchSize < items.length) {
           await new Promise(resolve => setTimeout(resolve, delay));
         }
       } catch (error) {
         console.error('Batch processing error:', error);
-        // Continue with next batch
       }
     }
-    
     return results;
   }
 
-  // Resource pooling for expensive operations
-  private resourcePool = new Map<string, any[]>();
-
-  getResource(type: string): any | null {
-    const pool = this.resourcePool.get(type);
-    return pool && pool.length > 0 ? pool.pop() : null;
-  }
-
-  returnResource(type: string, resource: any): void {
-    if (!this.resourcePool.has(type)) {
-      this.resourcePool.set(type, []);
-    }
-    
-    const pool = this.resourcePool.get(type)!;
-    if (pool.length < 10) { // Limit pool size
-      pool.push(resource);
-    }
-  }
-
-  // Performance metrics
   getPerformanceMetrics(): {
     cacheSize: number;
     queueLength: number;
     currentRequests: number;
     memoryUsage?: number;
   } {
-    const metrics = {
+    const metrics: {
+      cacheSize: number;
+      queueLength: number;
+      currentRequests: number;
+      memoryUsage?: number;
+    } = {
       cacheSize: this.cache.size,
       queueLength: this.requestQueue.length,
-      currentRequests: this.currentRequests
+      currentRequests: this.currentRequests,
     };
-
-    if ('memory' in performance) {
-      const memory = (performance as any).memory;
-      (metrics as any).memoryUsage = memory.usedJSHeapSize / 1024 / 1024; // MB
+    const perf = performance as Performance & { memory?: { usedJSHeapSize: number } };
+    if (perf.memory) {
+      metrics.memoryUsage = perf.memory.usedJSHeapSize / 1024 / 1024;
     }
-
     return metrics;
   }
 
-  // Cleanup on destroy
   destroy(): void {
-    if (this.cleanupInterval) {
-      clearInterval(this.cleanupInterval);
-    }
+    clearInterval(this.cleanupInterval);
     this.cache.clear();
     this.requestQueue.length = 0;
-    this.debouncedFunctions.clear();
-    this.resourcePool.clear();
   }
 }
 

@@ -1,7 +1,7 @@
-import React from 'react';
+import React, { useMemo, memo } from 'react';
 import { AnalyticsService } from '../../services/analyticsService';
 import { Lead } from '../../types';
-import { 
+import {
   UserGroupIcon,
   CheckCircleIcon,
   ChartBarIcon,
@@ -16,17 +16,23 @@ interface DashboardStatsProps {
   leads: Lead[];
 }
 
-export const DashboardStats: React.FC<DashboardStatsProps> = ({ leads }) => {
-  const analytics = AnalyticsService.calculateAnalytics(leads);
-  
-  // Calculate enrichment stats
-  const enrichedLeads = leads.filter(l => l.email && l.phone && l.contactPerson).length;
-  const enrichmentRate = leads.length > 0 ? Math.round((enrichedLeads / leads.length) * 100) : 0;
-  const leadsWithEmail = leads.filter(l => l.email).length;
-  const leadsWithPhone = leads.filter(l => l.phone).length;
-  const leadsWithWebsite = leads.filter(l => l.website).length;
+export const DashboardStats: React.FC<DashboardStatsProps> = memo(({ leads }) => {
+  // Memoize expensive analytics calculation
+  const analytics = useMemo(() => AnalyticsService.calculateAnalytics(leads), [leads]);
 
-  const statCards = [
+  // Memoize enrichment stats
+  const enrichmentStats = useMemo(() => {
+    const enrichedLeads = leads.filter(l => l.email && l.phone && l.contactPerson).length;
+    return {
+      enrichmentRate: leads.length > 0 ? Math.round((enrichedLeads / leads.length) * 100) : 0,
+      enrichedLeads,
+      leadsWithEmail: leads.filter(l => l.email).length,
+      leadsWithPhone: leads.filter(l => l.phone).length,
+      leadsWithWebsite: leads.filter(l => l.website).length,
+    };
+  }, [leads]);
+
+  const statCards = useMemo(() => [
     {
       title: 'Total Leads',
       value: analytics.totalLeads.toLocaleString(),
@@ -67,38 +73,38 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ leads }) => {
       progress: analytics.conversionRate,
       subtitle: `${leads.filter(l => l.status === 'converted').length} converted`
     }
-  ];
+  ], [analytics, leads]);
 
-  const enrichmentCards = [
+  const enrichmentCards = useMemo(() => [
     {
       title: 'Enriched Profiles',
-      value: `${enrichmentRate}%`,
+      value: `${enrichmentStats.enrichmentRate}%`,
       Icon: SparklesIcon,
-      detail: `${enrichedLeads} / ${leads.length}`,
+      detail: `${enrichmentStats.enrichedLeads} / ${leads.length}`,
       color: 'text-yellow-400'
     },
     {
       title: 'With Email',
-      value: leadsWithEmail.toString(),
+      value: enrichmentStats.leadsWithEmail.toString(),
       Icon: EnvelopeIcon,
-      detail: `${leads.length > 0 ? Math.round((leadsWithEmail / leads.length) * 100) : 0}%`,
+      detail: `${leads.length > 0 ? Math.round((enrichmentStats.leadsWithEmail / leads.length) * 100) : 0}%`,
       color: 'text-blue-400'
     },
     {
       title: 'With Phone',
-      value: leadsWithPhone.toString(),
+      value: enrichmentStats.leadsWithPhone.toString(),
       Icon: PhoneIcon,
-      detail: `${leads.length > 0 ? Math.round((leadsWithPhone / leads.length) * 100) : 0}%`,
+      detail: `${leads.length > 0 ? Math.round((enrichmentStats.leadsWithPhone / leads.length) * 100) : 0}%`,
       color: 'text-green-400'
     },
     {
       title: 'With Website',
-      value: leadsWithWebsite.toString(),
+      value: enrichmentStats.leadsWithWebsite.toString(),
       Icon: GlobeAltIcon,
-      detail: `${leads.length > 0 ? Math.round((leadsWithWebsite / leads.length) * 100) : 0}%`,
+      detail: `${leads.length > 0 ? Math.round((enrichmentStats.leadsWithWebsite / leads.length) * 100) : 0}%`,
       color: 'text-purple-400'
     }
-  ];
+  ], [enrichmentStats, leads.length]);
 
   return (
     <div className="space-y-6">
@@ -106,7 +112,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ leads }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statCards.map((stat, index) => (
           <div
-            key={index}
+            key={stat.title}
             className="bg-[#1E2328] rounded-lg border border-gray-700 p-6 hover:border-gray-600 transition-all duration-300 hover:transform hover:-translate-y-1 animate-fade-in-up"
             style={{ animationDelay: `${index * 80}ms`, animationFillMode: 'backwards' }}
           >
@@ -120,10 +126,9 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ leads }) => {
                 <stat.icon className={`h-6 w-6 ${stat.iconColor}`} />
               </div>
             </div>
-            
             <div className="mt-4">
               <div className="w-full bg-gray-700 rounded-full h-2">
-                <div 
+                <div
                   className={`h-2 rounded-full bg-gradient-to-r ${stat.color} transition-all duration-700`}
                   style={{ width: `${Math.min(stat.progress, 100)}%` }}
                 />
@@ -137,7 +142,7 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ leads }) => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {enrichmentCards.map((card, index) => (
           <div
-            key={index}
+            key={card.title}
             className="bg-[#1E2328] rounded-lg border border-gray-700 p-4 animate-fade-in-up"
             style={{ animationDelay: `${(index + 4) * 80}ms`, animationFillMode: 'backwards' }}
           >
@@ -154,4 +159,6 @@ export const DashboardStats: React.FC<DashboardStatsProps> = ({ leads }) => {
       </div>
     </div>
   );
-};
+});
+
+DashboardStats.displayName = 'DashboardStats';
