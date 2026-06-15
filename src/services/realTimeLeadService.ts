@@ -1,6 +1,6 @@
 import { Lead } from '../types';
 import { scrapeLeadsWithRealAI, enrichLeadWithRealAIData } from './realAIService';
-import { generateSeedLeads } from '../data/seedData';
+
 
 const USE_REAL_AI = true;
 const STORAGE_KEY = 'legacycompass_leads';
@@ -29,13 +29,13 @@ class RealTimeLeadService {
           updatedAt: new Date(lead.updatedAt),
         }));
       } else {
-        this.leads = generateSeedLeads();
+        this.leads = [];
         this.saveToLocalStorage();
         localStorage.setItem(SEED_VERSION_KEY, CURRENT_SEED_VERSION);
       }
     } catch (e) {
       console.error('Failed to load leads from localStorage:', e);
-      this.leads = generateSeedLeads();
+      this.leads = [];
     }
   }
 
