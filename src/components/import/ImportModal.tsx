@@ -1,8 +1,9 @@
 import React, { useState, useRef } from 'react';
-import {
+import { 
   XMarkIcon,
   DocumentArrowUpIcon,
   ExclamationTriangleIcon,
+  DocumentTextIcon
 } from '@heroicons/react/24/outline';
 import {
   sanitizeInput,
@@ -16,7 +17,7 @@ import {
 interface ImportModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onImport: (data: Record<string, unknown>[]) => void;  // App.tsx casts to Lead[]
+  onImport: (data: any[]) => void;
 }
 
 export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImport }) => {
@@ -24,7 +25,6 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
   const [file, setFile] = useState<File | null>(null);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [preview, setPreview] = useState<number>(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
@@ -43,19 +43,24 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
+    
     const files = e.dataTransfer.files;
-    if (files && files[0]) handleFile(files[0]);
+    if (files && files[0]) {
+      handleFile(files[0]);
+    }
   };
 
   const handleFileInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (files && files[0]) handleFile(files[0]);
+    if (files && files[0]) {
+      handleFile(files[0]);
+    }
   };
 
   const handleFile = (selectedFile: File) => {
     const validTypes = ['text/csv', 'application/json'];
     const fileExtension = selectedFile.name.toLowerCase().split('.').pop();
-
+    
     if (!validateFileType(selectedFile, validTypes) && !['csv', 'json'].includes(fileExtension || '')) {
       setError('Please select a CSV or JSON file');
       return;
@@ -65,10 +70,9 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
       setError('File size must be 5 MB or smaller');
       return;
     }
-
+    
     setFile(selectedFile);
     setError(null);
-    setPreview(0);
   };
 
   const parseCSVLine = (line: string): string[] => {
@@ -101,76 +105,60 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
     return rows.map(row => {
       const normalized: Record<string, unknown> = {};
       Object.entries(row).forEach(([key, value]) => {
-        const cleanKey = sanitizeInput(key.trim());
+        const cleanKey = sanitizeInput(key);
         normalized[cleanKey] = typeof value === 'string' ? sanitizeInput(value) : value;
       });
-
-      // Ensure required fields have defaults
-      if (!normalized.tags) normalized.tags = [];
-      if (!normalized.status) normalized.status = 'new';
-      if (!normalized.score) normalized.score = 50;
-      if (!normalized.employeeCount) normalized.employeeCount = 0;
-
       return normalized;
     });
   };
 
   const processFile = async () => {
     if (!file) return;
-
+    
     setImporting(true);
     setError(null);
-
+    
     try {
       const text = await file.text();
       let data: any[] = [];
-
+      
       if (file.name.toLowerCase().endsWith('.json')) {
         if (!validateJSONFormat(text)) {
-          throw new Error('Invalid JSON format. Please check your file.');
+          throw new Error('Invalid JSON format');
         }
         const parsed = JSON.parse(text);
         data = Array.isArray(parsed) ? parsed : [parsed];
       } else if (file.name.toLowerCase().endsWith('.csv')) {
         if (!validateCSVFormat(text)) {
-          throw new Error('Invalid CSV format. Please ensure consistent columns.');
+          throw new Error('Invalid CSV format');
         }
-        const lines = text.split('\n').filter(line => line.trim());
-        if (lines.length < 2) throw new Error('CSV must have a header row and at least one data row');
-
-        const headers = parseCSVLine(lines[0]).map(h => sanitizeInput(h.replace(/"/g, '').trim()));
-
-        data = lines
-          .slice(1)
+        const lines = text.split('\n');
+        const headers = parseCSVLine(lines[0]).map(h => sanitizeInput(h.replace(/"/g, '')));
+        
+        data = lines.slice(1)
           .filter(line => line.trim())
           .map(line => {
-            const values = parseCSVLine(line).map(v => v.replace(/"/g, '').trim());
+            const values = parseCSVLine(line).map(v => v.replace(/"/g, ''));
             const obj: any = {};
             headers.forEach((header, index) => {
-              obj[header] = values[index] !== undefined ? sanitizeInput(values[index]) : '';
+              obj[header] = values[index] ? sanitizeInput(values[index]) : '';
             });
             return obj;
           });
-      } else {
-        throw new Error('Unsupported file type. Please use CSV or JSON.');
       }
-
+      
       if (data.length === 0) {
         throw new Error('No data found in file');
       }
 
       data = normalizeLeadRows(data);
-      setPreview(data.length);
 
-      // Validate a sample of rows (first 10)
-      const sampleSize = Math.min(data.length, 10);
-      for (let i = 0; i < sampleSize; i++) {
-        const validation = validateLeadData(data[i]);
-        if (!validation.valid) {
-          throw new Error(`Row ${i + 1} is invalid: ${validation.errors.join(', ')}`);
-        }
+      const invalidRow = data.findIndex(row => !validateLeadData(row).valid);
+      if (invalidRow !== -1) {
+        const validation = validateLeadData(data[invalidRow]);
+        throw new Error(`Row ${invalidRow + 1} is invalid: ${validation.errors.join(', ')}`);
       }
-
+      
       onImport(data);
       onClose();
     } catch (err) {
@@ -180,62 +168,45 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
     }
   };
 
-  const handleClose = () => {
-    if (!importing) {
-      setFile(null);
-      setError(null);
-      setPreview(0);
-      onClose();
-    }
-  };
-
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
-      <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6 w-full max-w-md mx-4 animate-scale-in">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 modal-overlay">
+      <div className="bg-[#13171D] rounded-2xl border border-slate-700/40 p-6 w-full max-w-md mx-4 modal-content shadow-2xl shadow-black/40">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-lg font-semibold text-white">Import Leads</h3>
+          <h3 className="text-lg font-bold text-white flex items-center">
+            <div className="w-1.5 h-6 rounded-full bg-gradient-to-b from-emerald-500 to-teal-500 mr-3" />
+            Import Leads
+          </h3>
           <button
-            onClick={handleClose}
-            disabled={importing}
-            className="text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+            onClick={onClose}
+            className="text-slate-400 hover:text-white transition-colors p-1 rounded-lg hover:bg-slate-700/30"
           >
             <XMarkIcon className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Drop Zone */}
         <div
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
-            dragActive
-              ? 'border-blue-400 bg-blue-400/10'
-              : file
-              ? 'border-green-500 bg-green-500/5'
-              : 'border-gray-600 hover:border-gray-500'
+          className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-300 ${
+            dragActive 
+              ? 'border-blue-400/60 bg-blue-500/8 shadow-inner' 
+              : 'border-slate-700/40 hover:border-slate-600/50 hover:bg-slate-800/20'
           }`}
           onDragEnter={handleDrag}
           onDragLeave={handleDrag}
           onDragOver={handleDrag}
           onDrop={handleDrop}
-          onClick={() => !importing && fileInputRef.current?.click()}
         >
-          <DocumentArrowUpIcon className={`h-12 w-12 mx-auto mb-4 ${file ? 'text-green-400' : 'text-gray-400'}`} />
-          {file ? (
-            <>
-              <p className="text-white mb-1 font-medium">{file.name}</p>
-              <p className="text-gray-400 text-sm">{(file.size / 1024).toFixed(1)} KB</p>
-              {preview > 0 && (
-                <p className="text-green-400 text-sm mt-1">{preview} rows ready to import</p>
-              )}
-            </>
-          ) : (
-            <>
-              <p className="text-white mb-2">Drop your file here or</p>
-              <span className="text-blue-400 hover:text-blue-300 font-medium cursor-pointer">
-                browse files
-              </span>
-              <p className="text-sm text-gray-500 mt-2">Supports CSV and JSON files (max 5 MB)</p>
-            </>
-          )}
+          <div className="p-3 rounded-xl bg-slate-800/40 inline-block mb-4">
+            <DocumentArrowUpIcon className="h-10 w-10 text-slate-400" />
+          </div>
+          <p className="text-white font-medium mb-1">Drop your file here or</p>
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="text-blue-400 hover:text-blue-300 font-medium transition-colors"
+          >
+            browse files
+          </button>
+          <p className="text-xs text-slate-600 mt-2">Supports CSV and JSON files (max 5 MB)</p>
+          
           <input
             ref={fileInputRef}
             type="file"
@@ -245,40 +216,42 @@ export const ImportModal: React.FC<ImportModalProps> = ({ isOpen, onClose, onImp
           />
         </div>
 
-        {/* Format hint */}
-        <div className="mt-3 p-3 bg-[#161B22] rounded border border-gray-700">
-          <p className="text-xs text-gray-400 font-medium mb-1">Required CSV columns:</p>
-          <p className="text-xs text-gray-500">companyName, industry, location</p>
-          <p className="text-xs text-gray-500 mt-1">Optional: email, phone, contactPerson, website, score, status, revenue, employeeCount</p>
-        </div>
+        {file && (
+          <div className="mt-4 p-3.5 bg-[#0E1218] rounded-xl border border-slate-700/30 flex items-center">
+            <div className="p-2 rounded-lg bg-blue-500/10 border border-blue-500/20 mr-3">
+              <DocumentTextIcon className="h-5 w-5 text-blue-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm text-white font-medium truncate">{file.name}</p>
+              <p className="text-[10px] text-slate-500">{(file.size / 1024).toFixed(1)} KB</p>
+            </div>
+          </div>
+        )}
 
         {error && (
-          <div className="mt-4 p-3 bg-red-900/20 border border-red-700 rounded flex items-start space-x-2">
-            <ExclamationTriangleIcon className="h-5 w-5 text-red-400 flex-shrink-0 mt-0.5" />
+          <div className="mt-4 p-3.5 bg-red-500/8 border border-red-500/20 rounded-xl flex items-center">
+            <ExclamationTriangleIcon className="h-5 w-5 text-red-400 mr-2.5 flex-shrink-0" />
             <p className="text-sm text-red-400">{error}</p>
           </div>
         )}
 
         <div className="flex justify-end space-x-3 mt-6">
           <button
-            onClick={handleClose}
-            disabled={importing}
-            className="px-4 py-2 text-gray-400 hover:text-white transition-colors disabled:opacity-50"
+            onClick={onClose}
+            className="px-4 py-2.5 text-slate-400 hover:text-white transition-colors rounded-lg hover:bg-slate-700/30"
           >
             Cancel
           </button>
           <button
             onClick={processFile}
             disabled={!file || importing}
-            className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+            className="px-5 py-2.5 text-white rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:brightness-110"
+            style={{
+              background: 'linear-gradient(135deg, #059669, #10b981)',
+              boxShadow: '0 2px 10px rgba(16, 185, 129, 0.25)',
+            }}
           >
-            {importing && (
-              <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-            )}
-            <span>{importing ? 'Importing...' : 'Import'}</span>
+            {importing ? 'Importing...' : 'Import'}
           </button>
         </div>
       </div>

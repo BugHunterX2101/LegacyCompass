@@ -1,21 +1,19 @@
 import React, { useState, useMemo } from 'react';
 import { Lead } from '../../types';
 import { ScoreCircle } from '../common/ScoreCircle';
-import { StatusBadge } from '../common/StatusBadge';
 import { 
   ArrowTopRightOnSquareIcon as ExternalLinkIcon, 
   EnvelopeIcon, 
   PhoneIcon,
   ChevronUpIcon,
   ChevronDownIcon,
-  SparklesIcon
+  UserGroupIcon
 } from '@heroicons/react/24/outline';
 
 interface LeadTableProps {
   leads: Lead[];
   onLeadSelect: (leadIds: string[]) => void;
   selectedLeads: string[];
-  onSelectLeadForAI?: (leadId: string) => void;
 }
 
 type SortField = keyof Lead;
@@ -24,8 +22,7 @@ type SortDirection = 'asc' | 'desc';
 export const LeadTable: React.FC<LeadTableProps> = ({ 
   leads, 
   onLeadSelect, 
-  selectedLeads,
-  onSelectLeadForAI
+  selectedLeads 
 }) => {
   const [sortField, setSortField] = useState<SortField>('companyName');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
@@ -85,6 +82,17 @@ export const LeadTable: React.FC<LeadTableProps> = ({
     window.open(`https://mail.google.com/mail/?view=cm&fs=1&to=${email}&su=${subject}&body=${body}`, '_blank');
   };
 
+  const getStatusColor = (status: Lead['status']) => {
+    switch (status) {
+      case 'new': return 'bg-blue-500/15 text-blue-300 border border-blue-500/25';
+      case 'contacted': return 'bg-amber-500/15 text-amber-300 border border-amber-500/25';
+      case 'qualified': return 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25';
+      case 'converted': return 'bg-violet-500/15 text-violet-300 border border-violet-500/25';
+      case 'rejected': return 'bg-red-500/15 text-red-300 border border-red-500/25';
+      default: return 'bg-slate-500/15 text-slate-300 border border-slate-500/25';
+    }
+  };
+
   const SortIcon: React.FC<{ field: SortField }> = ({ field }) => {
     if (sortField !== field) return null;
     return sortDirection === 'asc' ? 
@@ -92,23 +100,24 @@ export const LeadTable: React.FC<LeadTableProps> = ({
       <ChevronDownIcon className="h-4 w-4" />;
   };
 
-  if (leads.length === 0) {
+  if (!leads) {
     return (
-      <div className="bg-[#1E2328] rounded-lg border border-gray-700 overflow-hidden">
-        <div className="text-center py-12">
-          <div className="text-gray-400 text-lg mb-2">No leads found</div>
-          <p className="text-sm text-gray-500">Try adjusting your search or import new leads.</p>
+      <div className="bg-[#13171D] rounded-xl border border-slate-700/40 overflow-hidden">
+        <div className="text-center py-16">
+          <div className="gradient-spinner w-8 h-8 mx-auto mb-4" />
+          <div className="text-slate-400 text-sm">Loading leads...</div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#1E2328] rounded-lg border border-gray-700 overflow-hidden">
-      <div className="px-6 py-4 border-b border-gray-700">
+    <div className="bg-[#13171D] rounded-xl border border-slate-700/40 overflow-hidden">
+      <div className="px-6 py-4 border-b border-slate-700/40">
         <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold text-white">
-            Leads ({leads.length})
+          <h3 className="text-lg font-semibold text-white flex items-center">
+            <div className="w-1 h-5 rounded-full bg-gradient-to-b from-indigo-500 to-blue-500 mr-3" />
+            Leads <span className="text-slate-500 font-normal ml-2">({leads.length})</span>
           </h3>
           <div className="flex items-center space-x-2">
             {selectedLeads.length > 0 && (
@@ -121,8 +130,8 @@ export const LeadTable: React.FC<LeadTableProps> = ({
       </div>
 
       <div className="overflow-x-auto table-container">
-        <table className="min-w-full divide-y divide-gray-700">
-          <thead className="bg-[#161B22]">
+        <table className="min-w-full divide-y divide-slate-700/40">
+          <thead className="bg-[#0E1218] sticky top-0 z-10">
             <tr>
               <th className="px-6 py-3 text-left">
                 <label className="sr-only" htmlFor="select-all">Select all leads</label>
@@ -136,7 +145,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                 />
               </th>
               <th 
-                className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
+                className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider cursor-pointer hover:text-white transition-colors"
                 onClick={() => handleSort('companyName')}
               >
                 <div className="flex items-center space-x-1">
@@ -153,7 +162,7 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                   <SortIcon field="industry" />
                 </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 Contact
               </th>
               <th 
@@ -192,19 +201,14 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                   <SortIcon field="status" />
                 </div>
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+              <th className="px-6 py-3 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">
                 Links
               </th>
-              {onSelectLeadForAI && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
-                  AI
-                </th>
-              )}
             </tr>
           </thead>
-          <tbody className="bg-[#1E2328] divide-y divide-gray-700">
+          <tbody className="bg-[#13171D] divide-y divide-slate-700/30">
             {sortedLeads.map((lead) => (
-              <tr key={lead.id} className="hover:bg-[#262C36] transition-colors">
+              <tr key={lead.id} className="hover:bg-[#1A2030] transition-all duration-200" style={{ borderLeft: '3px solid transparent' }} onMouseEnter={(e) => e.currentTarget.style.borderLeftColor = '#3b82f6'} onMouseLeave={(e) => e.currentTarget.style.borderLeftColor = 'transparent'}>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <label className="sr-only" htmlFor={`select-lead-${lead.id}`}>
                     Select {lead.companyName}
@@ -232,8 +236,8 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="text-sm text-white">{lead.industry || 'N/A'}</div>
                 </td>
-                <td className="px-6 py-4">
-                  <div className="space-y-1 min-w-[160px]">
+                <td className="px-6 py-4 whitespace-nowrap">
+                  <div className="space-y-1">
                     {lead.email && (
                       <div className="flex items-center text-sm">
                         <EnvelopeIcon className="h-4 w-4 text-gray-400 mr-2 flex-shrink-0" />
@@ -284,13 +288,12 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center gap-1.5">
-                    <ScoreCircle score={lead.score} size="sm" showLabel={false} />
-                    <span className="text-xs text-gray-300 font-medium">{lead.score}</span>
-                  </div>
+                  <ScoreCircle score={lead.score} size="sm" showLabel={false} />
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <StatusBadge status={lead.status} size="sm" />
+                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(lead.status)}`}>
+                    {lead.status}
+                  </span>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center space-x-2">
@@ -346,23 +349,21 @@ export const LeadTable: React.FC<LeadTableProps> = ({
                     )}
                   </div>
                 </td>
-                {onSelectLeadForAI && (
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <button
-                      onClick={() => onSelectLeadForAI(lead.id)}
-                      title="Analyze with AI"
-                      className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-300 bg-purple-900/20 border border-purple-700/30 rounded-md hover:bg-purple-900/40 hover:border-purple-600/50 transition-all duration-200"
-                    >
-                      <SparklesIcon className="h-3 w-3" />
-                      Analyze
-                    </button>
-                  </td>
-                )}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+      
+      {leads.length === 0 && (
+        <div className="empty-state">
+          <div className="empty-state-icon">
+            <UserGroupIcon className="h-8 w-8 text-blue-400" />
+          </div>
+          <p className="empty-state-title">No leads found</p>
+          <p className="empty-state-text">Try adjusting your search filters or scrape new leads to populate the table.</p>
+        </div>
+      )}
     </div>
   )
 }

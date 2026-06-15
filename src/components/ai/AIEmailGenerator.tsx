@@ -5,8 +5,7 @@ import { LoadingSpinner } from '../common/LoadingSpinner';
 import { 
   SparklesIcon, 
   ClipboardDocumentIcon,
-  PaperAirplaneIcon,
-  ExclamationTriangleIcon
+  PaperAirplaneIcon
 } from '@heroicons/react/24/outline';
 
 interface AIEmailTemplate {
@@ -26,7 +25,6 @@ export const AIEmailGenerator: React.FC<AIEmailGeneratorProps> = ({ lead, onEmai
   const [loading, setLoading] = useState(false);
   const [purpose, setPurpose] = useState('introduction');
   const [copied, setCopied] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   const purposes = [
     { value: 'introduction', label: 'Introduction Email' },
@@ -39,13 +37,11 @@ export const AIEmailGenerator: React.FC<AIEmailGeneratorProps> = ({ lead, onEmai
   const generateEmail = async () => {
     try {
       setLoading(true);
-      setError(null);
       const template = await aiService.generatePersonalizedEmail(lead, purpose);
       setEmailTemplate(template);
       onEmailGenerated?.(template);
-    } catch (err) {
-      console.error('Email generation error:', err);
-      setError('Failed to generate email. Please try again.');
+    } catch (error) {
+      console.error('Email generation error:', error);
     } finally {
       setLoading(false);
     }
@@ -76,23 +72,23 @@ export const AIEmailGenerator: React.FC<AIEmailGeneratorProps> = ({ lead, onEmai
   };
 
   return (
-    <div className="bg-[#1E2328] rounded-lg border border-gray-700 p-6">
+    <div className="bg-[#13171D] rounded-xl border border-slate-700/40 p-6">
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-white flex items-center">
-          <SparklesIcon className="h-5 w-5 mr-2 text-blue-400" />
+          <div className="w-1 h-5 rounded-full bg-gradient-to-b from-blue-500 to-indigo-500 mr-3" />
           AI Email Generator
         </h3>
       </div>
 
       {/* Email Purpose Selection */}
       <div className="mb-6">
-        <label className="block text-sm font-medium text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-slate-300 mb-2">
           Email Purpose
         </label>
         <select
           value={purpose}
           onChange={(e) => setPurpose(e.target.value)}
-          className="w-full px-3 py-2 bg-[#0D1117] border border-gray-600 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+          className="w-full px-3 py-2.5 bg-[#0B0F15] border border-slate-600/40 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-500/40 transition-all"
         >
           {purposes.map(p => (
             <option key={p.value} value={p.value}>{p.label}</option>
@@ -105,7 +101,11 @@ export const AIEmailGenerator: React.FC<AIEmailGeneratorProps> = ({ lead, onEmai
         <button
           onClick={generateEmail}
           disabled={loading}
-          className="w-full flex items-center justify-center px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 transition-colors"
+          className="w-full flex items-center justify-center px-4 py-3 text-white rounded-xl transition-all duration-200 disabled:opacity-50 hover:brightness-110"
+          style={{
+            background: 'linear-gradient(135deg, #2563eb, #4f46e5)',
+            boxShadow: '0 2px 12px rgba(37, 99, 235, 0.3)',
+          }}
         >
           {loading ? (
             <>
@@ -121,26 +121,18 @@ export const AIEmailGenerator: React.FC<AIEmailGeneratorProps> = ({ lead, onEmai
         </button>
       </div>
 
-      {/* Error State */}
-      {error && (
-        <div className="mb-6 p-3 bg-red-900/20 border border-red-700 rounded-lg flex items-center space-x-2">
-          <ExclamationTriangleIcon className="h-4 w-4 text-red-400 flex-shrink-0" />
-          <span className="text-red-400 text-sm">{error}</span>
-        </div>
-      )}
-
       {/* Generated Email */}
       {emailTemplate && (
         <div className="space-y-4">
-          <div className="bg-[#161B22] rounded-lg p-4 border border-gray-700">
+          <div className="bg-[#0E1218] rounded-xl p-5 border border-slate-700/30">
             <div className="flex items-center justify-between mb-3">
               <h4 className="text-sm font-medium text-white">Generated Email</h4>
               <div className="flex items-center space-x-2">
-                <span className={`text-xs px-2 py-1 rounded-full border ${
-                  emailTemplate.tone === 'professional' ? 'bg-blue-900/30 border-blue-700/40 text-blue-300' :
-                  emailTemplate.tone === 'casual' ? 'bg-green-900/30 border-green-700/40 text-green-300' :
-                  emailTemplate.tone === 'urgent' ? 'bg-red-900/30 border-red-700/40 text-red-300' :
-                  'bg-purple-900/30 border-purple-700/40 text-purple-300'
+                <span className={`text-xs px-2.5 py-1 rounded-full font-medium ${
+                  emailTemplate.tone === 'professional' ? 'bg-blue-500/15 text-blue-300 border border-blue-500/25' :
+                  emailTemplate.tone === 'casual' ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/25' :
+                  emailTemplate.tone === 'urgent' ? 'bg-red-500/15 text-red-300 border border-red-500/25' :
+                  'bg-violet-500/15 text-violet-300 border border-violet-500/25'
                 }`}>
                   {emailTemplate.tone}
                 </span>
@@ -149,17 +141,17 @@ export const AIEmailGenerator: React.FC<AIEmailGeneratorProps> = ({ lead, onEmai
 
             {/* Subject Line */}
             <div className="mb-4">
-              <label className="block text-xs text-gray-400 mb-1">Subject:</label>
-              <div className="bg-[#0D1117] rounded p-3 border border-gray-600">
+              <label className="block text-xs text-slate-500 mb-1.5">Subject:</label>
+              <div className="bg-[#0B0F15] rounded-xl p-3.5 border border-slate-700/30">
                 <p className="text-white text-sm font-medium">{emailTemplate.subject}</p>
               </div>
             </div>
 
             {/* Email Body */}
             <div className="mb-4">
-              <label className="block text-xs text-gray-400 mb-1">Body:</label>
-              <div className="bg-[#0D1117] rounded p-3 border border-gray-600">
-                <pre className="text-white text-sm whitespace-pre-wrap font-sans">
+              <label className="block text-xs text-slate-500 mb-1.5">Body:</label>
+              <div className="bg-[#0B0F15] rounded-xl p-4 border border-slate-700/30">
+                <pre className="text-white text-sm whitespace-pre-wrap font-sans leading-relaxed">
                   {emailTemplate.body}
                 </pre>
               </div>
@@ -167,12 +159,12 @@ export const AIEmailGenerator: React.FC<AIEmailGeneratorProps> = ({ lead, onEmai
 
             {/* Personalization Points */}
             <div className="mb-4">
-              <label className="block text-xs text-gray-400 mb-2">Personalization Used:</label>
+              <label className="block text-xs text-slate-500 mb-2">Personalization Used:</label>
               <div className="flex flex-wrap gap-2">
                 {emailTemplate.personalization.map((point, index) => (
                   <span
                     key={index}
-                    className="text-xs px-2 py-1 bg-purple-600/20 text-purple-300 rounded-full"
+                    className="text-xs px-2.5 py-1 bg-violet-500/10 text-violet-300 rounded-lg border border-violet-500/20"
                   >
                     {point}
                   </span>
@@ -181,10 +173,10 @@ export const AIEmailGenerator: React.FC<AIEmailGeneratorProps> = ({ lead, onEmai
             </div>
 
             {/* Action Buttons */}
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 pt-2">
               <button
                 onClick={copyToClipboard}
-                className="flex items-center px-3 py-2 bg-[#161B22] text-gray-200 border border-gray-600 rounded-md hover:bg-[#1E2328] hover:border-gray-500 transition-colors"
+                className="flex items-center px-3.5 py-2 bg-slate-700/50 text-white rounded-lg hover:bg-slate-600/50 transition-all border border-slate-600/30"
               >
                 <ClipboardDocumentIcon className="h-4 w-4 mr-2" />
                 {copied ? 'Copied!' : 'Copy Email'}
@@ -193,7 +185,11 @@ export const AIEmailGenerator: React.FC<AIEmailGeneratorProps> = ({ lead, onEmai
               {(lead.email || lead.gmail) && (
                 <button
                   onClick={openEmailClient}
-                  className="flex items-center px-3 py-2 bg-green-900/30 text-green-300 border border-green-700/40 rounded-md hover:bg-green-900/50 transition-colors"
+                  className="flex items-center px-3.5 py-2 text-white rounded-lg transition-all"
+                  style={{
+                    background: 'linear-gradient(135deg, #059669, #10b981)',
+                    boxShadow: '0 2px 8px rgba(16, 185, 129, 0.25)',
+                  }}
                 >
                   <PaperAirplaneIcon className="h-4 w-4 mr-2" />
                   Send Email
@@ -202,7 +198,11 @@ export const AIEmailGenerator: React.FC<AIEmailGeneratorProps> = ({ lead, onEmai
 
               <button
                 onClick={generateEmail}
-                className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="flex items-center px-3.5 py-2 text-white rounded-lg transition-all"
+                style={{
+                  background: 'linear-gradient(135deg, #2563eb, #4f46e5)',
+                  boxShadow: '0 2px 8px rgba(37, 99, 235, 0.25)',
+                }}
               >
                 <SparklesIcon className="h-4 w-4 mr-2" />
                 Regenerate
@@ -213,21 +213,14 @@ export const AIEmailGenerator: React.FC<AIEmailGeneratorProps> = ({ lead, onEmai
       )}
 
       {/* Tips */}
-      <div className="mt-6 p-4 bg-blue-600/10 border border-blue-600/30 rounded-lg">
-        <h4 className="text-sm font-medium text-blue-300 mb-2">Tips for best results:</h4>
-        <div className="space-y-1.5">
-          {[
-            'AI analyzes lead data to create personalized content',
-            'Email tone adapts to company size and industry',
-            'Personalization includes company-specific details',
-            'Click Regenerate to get a different variation',
-          ].map((tip, i) => (
-            <div key={i} className="flex items-start gap-2 text-sm text-blue-200/80">
-              <span className="text-blue-400 font-bold mt-0.5">&#x2022;</span>
-              <span>{tip}</span>
-            </div>
-          ))}
-        </div>
+      <div className="mt-6 p-4 bg-blue-500/5 border border-blue-500/15 rounded-xl">
+        <h4 className="text-sm font-medium text-blue-300 mb-2">AI Email Tips:</h4>
+        <ul className="text-sm text-blue-200/70 space-y-1">
+          <li>• AI analyzes lead data to create personalized content</li>
+          <li>• Email tone adapts to company size and industry</li>
+          <li>• Personalization includes company-specific details</li>
+          <li>• Multiple variations available for A/B testing</li>
+        </ul>
       </div>
     </div>
   );
