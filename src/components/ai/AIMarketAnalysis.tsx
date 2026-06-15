@@ -244,7 +244,7 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
               <select
                 value={selectedIndustry}
                 onChange={(e) => setSelectedIndustry(e.target.value)}
-                className="bg-[#0D1117] border border-slate-600/50 text-white text-sm rounded-lg px-3 py-1.5 pr-7 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 max-w-[220px] transition-colors"
+                className="bg-[#0D1117] border border-slate-600/50 text-white text-sm rounded-lg px-3 py-1.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 max-w-[320px] transition-colors"
               >
                 {allIndustries.map(ind => (
                   <option key={ind} value={ind}>{ind}</option>
@@ -259,7 +259,7 @@ export const AIMarketAnalysisComponent: React.FC<AIMarketAnalysisProps> = ({
             <select
               value={selectedLocation}
               onChange={(e) => setSelectedLocation(e.target.value)}
-              className="bg-[#0D1117] border border-slate-600/50 text-white text-sm rounded-lg px-3 py-1.5 pr-7 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 max-w-[220px] transition-colors"
+              className="bg-[#0D1117] border border-slate-600/50 text-white text-sm rounded-lg px-3 py-1.5 pr-10 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 max-w-[320px] transition-colors"
             >
               {allLocations.map(loc => (
                 <option key={loc} value={loc}>{loc}</option>

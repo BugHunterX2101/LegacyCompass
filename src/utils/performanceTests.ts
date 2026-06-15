@@ -107,7 +107,7 @@ async function runAllPerformanceTests(): Promise<void> {
     console.log(`  Total: ${(memory.totalJSHeapSize / 1024 / 1024).toFixed(2)} MB`);
   }
 
-  console.log('\n✅ Performance testing complete!');
+  console.log('\n[SUCCESS] Performance testing complete!');
 }
 
 if (typeof window !== 'undefined') {
