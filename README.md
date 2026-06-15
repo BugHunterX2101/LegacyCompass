@@ -145,19 +145,37 @@ LegacyCompass/
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `GROQ_API_KEY` | Yes for AI | Groq API key used by `/api/ai` |
-| `GNEWS_API_KEY` | Yes for news | GNews API key used by `/api/news` |
-| `VITE_USE_REAL_AI` | Optional | Toggle real AI workflows |
+| `GROQ_API_KEY` | Yes | Groq API key used by `/api/ai` (uses `llama-3.3-70b-versatile` for real-time analysis, enrichment, emails, and market insights) |
+| `GNEWS_API_KEY` | Yes | GNews API key used by `/api/news` for real-time location-aware industry news |
+| `VITE_USE_REAL_AI` | Optional | Set to `true` to enforce strict real-time AI workflows (defaults to `true`) |
 | `VITE_API_URL` | Optional | API base URL override for deployments |
-| `VITE_ENABLE_PERFORMANCE_MONITORING` | Optional | Enables performance monitoring UI |
+| `VITE_ENABLE_PERFORMANCE_MONITORING` | Optional | Enables performance monitoring UI in development |
 
-The server also accepts `VITE_GROQ_API_KEY` and `VITE_NEWS_API_KEY` as backwards-compatible fallbacks, but server-side `GROQ_API_KEY` and `GNEWS_API_KEY` are preferred.
+> [!IMPORTANT]
+> The application operates in **Strict Real-Time Mode**. All mock and seed data fallbacks have been removed for AI features. If API keys are missing or invalid, the app will explicitly surface configuration/connection errors rather than displaying simulated results.
 
 ## Deployment
 
-### Vercel
+### Vercel Deployment
 
-Push to GitHub and connect the repository in Vercel. The `api/` directory provides serverless handlers for AI and news proxying. Configure `GROQ_API_KEY` and `GNEWS_API_KEY` in the Vercel project settings.
+1. **Connect & Link**:
+   Push your repository to GitHub, link it using the Vercel CLI:
+   ```bash
+   npx vercel link --yes
+   ```
+
+2. **Configure Environment Variables**:
+   Add your API keys to the project across all environments (Production, Preview, and Development):
+   ```bash
+   npx vercel env add GROQ_API_KEY --value "your-groq-key-here" --yes --force
+   npx vercel env add GNEWS_API_KEY --value "your-gnews-key-here" --yes --force
+   ```
+
+3. **Deploy to Production**:
+   Deploy and activate the environment variables:
+   ```bash
+   npx vercel --prod --yes
+   ```
 
 ### Self-Hosted
 
@@ -170,15 +188,15 @@ Express serves the built SPA from `dist/` and exposes `/api/ai` and `/api/news` 
 
 ## Verification
 
-Before deploying, run:
+Before deploying, run validation checks to ensure zero TypeScript or build issues:
 
 ```bash
 npm run lint
-npm test
+npm run typecheck
 npm run build
-npm audit
 ```
 
 ## License
 
 MIT
+
